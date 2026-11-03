@@ -33,21 +33,35 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
 
 ## Diseño (Figma)
 
-Figma: https://www.figma.com/design/olhIBoGbGoNDJ9LBxbxiqz/Proyecto-Registraduria — no es accesible desde Claude; el usuario comparte capturas cuando hace falta.
+Figma: https://www.figma.com/design/olhIBoGbGoNDJ9LBxbxiqz/Proyecto-Registraduria (fileKey `olhIBoGbGoNDJ9LBxbxiqz`). Accesible con el servidor MCP de Figma (alcance user): **lectura y edición funcionan**. Antes de editar con `use_figma` cargar las guías `figma-use` y `figma-generate-design`. El archivo no tiene variables, estilos ni componentes: se reutilizan los valores de las pantallas existentes (Inter; textos `#142c43` / `#53677b`; bordes `#dce4ed` / `#9aabbe`; azul `#1658c1`; rojo `#c9454c`).
 
-Dos pantallas:
-1. **Consulta** (`/consulta`): encabezado, `CedulaForm`, `PromoPanel` ("Tu voz cuenta"), `PasosConsulta`.
-2. **Resultado** (`/consulta/resultado`): `CiudadanoResumen`, `LugarVotacionCard`, `MapaPuesto` y, **solo si es jurado**, `JuradoAlert`, `AsignacionJuradoCard` y `ResponsabilidadesNota`.
+Frames (página `0:1`):
+- `6:2319` Consulta electoral · Inicio
+- `17:2` Consulta electoral · Error campo vacío
+- `17:145` Consulta electoral · Error formato inválido
+- `17:288` Consulta electoral · Cédula no encontrada
+- `6:2442` Resultado · Votante sin designación
+- `6:2609` Resultado · Votante y jurado
+
+Pantallas y componentes:
+1. **Consulta** (`/consulta`): encabezado, `CedulaForm`, `PromoPanel` ("Tu voz cuenta"), `PasosConsulta`. Estados de error **debajo del campo, en lugar del texto de ayuda**:
+   - Campo vacío → `FormError`: borde rojo + "Ingresa tu número de cédula para consultar."
+   - Formato inválido → `FormError`: borde rojo + "El número no es válido. Escribe solo números, sin puntos, espacios ni comas."
+   - No encontrada → `ConsultaSinResultado`: panel rojo claro, borde normal en el campo, "No encontramos información para esta cédula" + "Verifica el número e inténtalo de nuevo. Solo existen cédulas de ejemplo."
+2. **Resultado** (`/consulta/resultado`): `CiudadanoResumen`, `LugarVotacionCard`, `MapaPuesto` y además:
+   - **Solo votante:** `VotanteAlert` (badge VOTANTE) y `ConsejoVotacion` ("Antes de ir a votar"). `CiudadanoResumen` muestra la edad.
+   - **Jurado:** `JuradoAlert` (badge JURADO), `AsignacionJuradoCard` y `ResponsabilidadesNota`.
 
 Layout común: `TopBar`, `SiteHeader`, `MainNav`, `FlagStripe`, `DemoBanner`, `Breadcrumb`, `Stepper`, `SiteFooter`.
 
 ## Decisiones tomadas
 
-- Un ciudadano que **no es jurado** es solo votante: el resultado muestra únicamente el lugar de votación. **No existe** un mensaje "no eres jurado". Las pruebas deben verificar la **ausencia** de las secciones de jurado.
+- Un ciudadano que **no es jurado** es solo votante: el resultado muestra el aviso `VotanteAlert` con el texto **neutro** "Eres votante y no tienes designación como jurado" (no depende del género), el lugar de votación y el consejo "Antes de ir a votar". Las pruebas deben verificar la **presencia** de ese aviso y la **ausencia** de las secciones de jurado.
+- La pantalla del votante muestra la **edad** ("Edad · 32 años"); la del jurado no (así está en el Figma). La API devuelve la edad en ambos casos y el frontend decide si la muestra.
 - "Cómo consultar" y "Ayuda" en `MainNav` son **enlaces solo visuales**; no tienen página.
 - La cédula viaja por **estado de navegación**, nunca en la URL.
 - La cédula se ingresa solo con dígitos y se **muestra formateada** con puntos (`1.098.765.432`).
-- Los estados de error (`FormError`, `ConsultaSinResultado`) no están diseñados en Figma; se diseñarán siguiendo el estilo existente.
+- Los estados de error (`FormError`, `ConsultaSinResultado`) están diseñados en Figma (frames `17:2`, `17:145`, `17:288`). El mensaje de formato inválido no menciona la longitud hasta que se defina la regla de la cédula.
 - **`backend/apps/consultas/models.py` es del usuario.** Lo escribió el usuario y se ajustó con revisión de Claude. Cualquier cambio estructural al modelo se propone y se aplica solo con su aprobación.
 
 ## Modelo de datos
@@ -106,7 +120,8 @@ Convenciones del modelo:
 - ✅ Fixture `backend/apps/consultas/fixtures/datos_demo.json` cargado en `registraduria` (`python manage.py loaddata datos_demo`).
 - ✅ Admin de Django configurado para los 6 modelos; `__str__` legibles en `Mesa` y `DesignacionJurado`.
 - ✅ Código del backend documentado con docstrings; README con instrucciones de ejecución del backend.
-- ⏳ El superusuario lo crea el usuario (`python manage.py createsuperuser`); pide contraseña.
+- ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
+- ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ⏳ Siguiente: API REST de consulta (`validators.py`, `services.py`, `serializers.py`, `views.py`, `urls.py`) y datos de `tests/data/`.
 
 ## Datos de demostración (`datos_demo.json`)
@@ -121,10 +136,9 @@ Convenciones del modelo:
 | `1017234568` | Jurado remanente en **otra mesa del mismo puesto**. Sin segundo nombre; apellido con ñ. |
 | `52748193` | Jurado remanente en otra mesa del mismo puesto. Cédula antigua de 8 dígitos. |
 | `1036845120` | Jurado titular en **otro puesto** de la misma ciudad. |
-| `1023456789` | Solo votante (ejemplo del input en el Figma). |
+| `1023456789` | Solo votante (caso del Figma "Votante sin designación": Laura Camila Gómez, 32 años, Mesa 012, Colegio Cívico La Esperanza, Medellín). Sin segundo apellido. |
 | `1144056789` | Solo votante. |
 | `79563214` | Solo votante. Cédula antigua de 8 dígitos. |
 | `1095827364` | Solo votante. 18 años, género O, sin segundo nombre. |
 | `4567891` | Solo votante. Cédula antigua de 7 dígitos, mayor edad. |
 | `1000000000` | **No registrada** (no existe en el fixture). |
-- ⏳ El resto de archivos de código siguen con solo un comentario de propósito. Las instrucciones de ejecución del README están pendientes.

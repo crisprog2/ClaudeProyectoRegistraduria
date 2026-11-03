@@ -726,6 +726,14 @@
     }
   },
   {
+    "model": "consultas.mesa",
+    "pk": 16,
+    "fields": {
+      "numero": 12,
+      "puesto": "050010101"
+    }
+  },
+  {
     "model": "consultas.persona",
     "pk": "1098765432",
     "fields": {
@@ -743,12 +751,12 @@
     "pk": "1023456789",
     "fields": {
       "primer_nombre": "Laura",
-      "segundo_nombre": "Valentina",
+      "segundo_nombre": "Camila",
       "primer_apellido": "Gómez",
-      "segundo_apellido": "Rincón",
+      "segundo_apellido": "",
       "genero": "F",
-      "fecha_nacimiento": "1998-07-22",
-      "mesa": 9
+      "fecha_nacimiento": "1994-05-10",
+      "mesa": 16
     }
   },
   {
