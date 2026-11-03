@@ -110,11 +110,22 @@ Convenciones del modelo:
 | 404 | `CEDULA_NO_ENCONTRADA` |
 | 405 | `METODO_NO_PERMITIDO` |
 | 415 | `SOLICITUD_INVALIDA` (no es JSON) |
-| 429 | `DEMASIADAS_CONSULTAS` (más de 30/min por IP; incluye `Retry-After`) |
+| 429 | `DEMASIADAS_CONSULTAS` (más de `CONSULTA_LIMITE_POR_MINUTO`/min por IP, 30 por defecto; incluye `Retry-After`) |
 
 Los mensajes son los textos del Figma. Seguridad: `NUM_PROXIES = 0` hace que el límite use `REMOTE_ADDR`; con el valor por defecto de DRF se podría evadir falsificando `X-Forwarded-For` (hay una prueba que lo verifica).
 
+Límite configurable: `CONSULTA_LIMITE_POR_MINUTO` (entero > 0; vacío = 30). La suite black-box levanta el servidor con un valor alto (1000) porque hace ~60 peticiones seguidas. `settings/test.py` lo fija en 30 para que las pruebas del 429 no dependan del `.env`. El 429 solo se prueba en white-box.
+
 Pruebas white-box (`backend/tests/`, 77): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL") y `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+
+Pruebas black-box de la API (`tests/api/`, 59, marker `api`; 14 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
+- `test_consulta_cedula.py`: respuesta exacta de los 10 ciudadanos del fixture, reglas de los escenarios mínimos (misma mesa, otra mesa del mismo puesto, otro puesto, solo votante), espacios externos, contrato de claves y que no se expongan datos sensibles.
+- `test_validaciones_cedula.py`: 19 casos de cédula requerida, formato inválido y no encontrada, con código y mensaje exactos.
+- `test_protocolo_http.py`: 405 (con cabecera `Allow`), 415 y JSON que no es objeto.
+- Soporte en `tests/support/`: `config.py` (`API_BASE_URL` del `.env`), `api_client.py` (`ConsultaApiClient`), `data_loader.py` (`cargar`, `caso`, `como_parametros`: el campo `"smoke": true` de un caso agrega el marker) y `edad.py` (oráculo de edad independiente del backend, con la fecha de America/Bogota).
+- Datos en `tests/data/`: `ciudadanos.json`, `cedulas_invalidas.json`, `solicitudes_invalidas.json`, `mensajes_error.json` y `contrato_consulta.json`.
+- `pytest.ini` de la raíz agrega `pythonpath = tests` (imports `support.*`). Si no hay servidor, el fixture `api` detiene la corrida con instrucciones.
+- Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite.
 
 ## Convenciones
 
@@ -147,7 +158,9 @@ Pruebas white-box (`backend/tests/`, 77): `test_models.py` (`nombre_completo` y 
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
 - ✅ Pruebas white-box del backend: 77 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
-- ⏳ Siguiente: datos de `tests/data/` y pruebas black-box de API (`tests/api/`), o empezar el frontend.
+- ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
+- ✅ Pruebas black-box de la API: 59 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
+- ⏳ Siguiente: frontend React (pantallas del Figma), luego BDD y E2E.
 
 ## Datos de demostración (`datos_demo.json`)
 

@@ -36,6 +36,14 @@ def env_bool(nombre, por_defecto=False):
     return os.environ.get(nombre, str(por_defecto)).strip().lower() in ('1', 'true', 'yes', 'si', 'sí')
 
 
+def env_entero_positivo(nombre, por_defecto):
+    """Lee una variable como entero mayor que 0; si está vacía usa el valor por defecto."""
+    valor = os.environ.get(nombre, '').strip() or str(por_defecto)
+    if not valor.isdigit() or int(valor) == 0:
+        raise ImproperlyConfigured(f"La variable '{nombre}' debe ser un entero mayor que 0 (valor actual: '{valor}').")
+    return int(valor)
+
+
 SECRET_KEY = env_requerida('DJANGO_SECRET_KEY')
 DEBUG = env_bool('DJANGO_DEBUG')
 ALLOWED_HOSTS = env_lista('DJANGO_ALLOWED_HOSTS')
@@ -129,7 +137,8 @@ REST_FRAMEWORK = {
     # Todas las respuestas de error con el formato {codigo, mensaje}.
     'EXCEPTION_HANDLER': 'apps.consultas.exceptions.manejador_de_errores',
     # Límite de consultas por IP para evitar recorridos masivos de cédulas.
-    'DEFAULT_THROTTLE_RATES': {'consulta': '30/min'},
+    # Por defecto 30/min; la suite black-box levanta el servidor con un valor alto.
+    'DEFAULT_THROTTLE_RATES': {'consulta': f"{env_entero_positivo('CONSULTA_LIMITE_POR_MINUTO', 30)}/min"},
     # 0 = identificar al cliente por REMOTE_ADDR. Con el valor por defecto (None)
     # DRF usa X-Forwarded-For, que el cliente puede falsificar para evadir el límite.
     # Si se despliega detrás de un proxy, poner aquí el número de proxies de confianza.

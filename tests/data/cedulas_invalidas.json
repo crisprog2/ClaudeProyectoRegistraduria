@@ -1,1 +1,21 @@
-[]
+[
+  {"id": "vacia", "cuerpo": {"cedula": ""}, "http": 400, "codigo": "CEDULA_REQUERIDA"},
+  {"id": "solo_espacios", "cuerpo": {"cedula": "   "}, "http": 400, "codigo": "CEDULA_REQUERIDA"},
+  {"id": "ausente", "cuerpo": {}, "http": 400, "codigo": "CEDULA_REQUERIDA"},
+  {"id": "nula", "cuerpo": {"cedula": null}, "http": 400, "codigo": "CEDULA_REQUERIDA"},
+  {"id": "con_puntos", "smoke": true, "cuerpo": {"cedula": "1.098.765.432"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "con_comas", "cuerpo": {"cedula": "1,098,765,432"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "espacios_internos", "cuerpo": {"cedula": "1098 765 432"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "con_guion", "cuerpo": {"cedula": "1098-765432"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "negativa", "cuerpo": {"cedula": "-1098765432"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "con_letras", "cuerpo": {"cedula": "abc123456"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "cero_inicial", "cuerpo": {"cedula": "0123456789"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "cinco_digitos", "cuerpo": {"cedula": "12345"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "once_digitos", "cuerpo": {"cedula": "10987654321"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "digitos_ancho_completo", "cuerpo": {"cedula": "１０９８７６５４３２"}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "numero_sin_comillas", "cuerpo": {"cedula": 1098765432}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "booleano", "cuerpo": {"cedula": true}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "lista", "cuerpo": {"cedula": ["1098765432"]}, "http": 400, "codigo": "CEDULA_FORMATO_INVALIDO"},
+  {"id": "no_registrada", "smoke": true, "cuerpo": {"cedula": "1000000000"}, "http": 404, "codigo": "CEDULA_NO_ENCONTRADA"},
+  {"id": "no_registrada_seis_digitos", "cuerpo": {"cedula": "100000"}, "http": 404, "codigo": "CEDULA_NO_ENCONTRADA"}
+]

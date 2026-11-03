@@ -1,0 +1,11 @@
+[
+  {"id": "get", "metodo": "GET", "http": 405, "codigo": "METODO_NO_PERMITIDO"},
+  {"id": "put", "metodo": "PUT", "cuerpo_crudo": "{\"cedula\": \"1098765432\"}", "content_type": "application/json", "http": 405, "codigo": "METODO_NO_PERMITIDO"},
+  {"id": "patch", "metodo": "PATCH", "cuerpo_crudo": "{\"cedula\": \"1098765432\"}", "content_type": "application/json", "http": 405, "codigo": "METODO_NO_PERMITIDO"},
+  {"id": "delete", "metodo": "DELETE", "http": 405, "codigo": "METODO_NO_PERMITIDO"},
+  {"id": "texto_plano", "metodo": "POST", "cuerpo_crudo": "1098765432", "content_type": "text/plain", "http": 415, "codigo": "SOLICITUD_INVALIDA"},
+  {"id": "formulario", "metodo": "POST", "cuerpo_crudo": "cedula=1098765432", "content_type": "application/x-www-form-urlencoded", "http": 415, "codigo": "SOLICITUD_INVALIDA"},
+  {"id": "json_mal_formado", "metodo": "POST", "cuerpo_crudo": "{\"cedula\": ", "content_type": "application/json", "http": 400, "codigo": "SOLICITUD_INVALIDA"},
+  {"id": "json_arreglo", "metodo": "POST", "cuerpo_crudo": "[\"1098765432\"]", "content_type": "application/json", "http": 400, "codigo": "SOLICITUD_INVALIDA"},
+  {"id": "json_texto", "metodo": "POST", "cuerpo_crudo": "\"1098765432\"", "content_type": "application/json", "http": 400, "codigo": "SOLICITUD_INVALIDA"}
+]

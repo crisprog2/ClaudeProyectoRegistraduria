@@ -1,0 +1,8 @@
+{
+  "CEDULA_REQUERIDA": "Ingresa tu número de cédula para consultar.",
+  "CEDULA_FORMATO_INVALIDO": "El número no es válido. Escribe solo números, sin puntos, espacios ni comas.",
+  "CEDULA_NO_ENCONTRADA": "No encontramos información para esta cédula.",
+  "METODO_NO_PERMITIDO": "Usa POST para consultar.",
+  "SOLICITUD_INVALIDA": "La solicitud no tiene un formato válido.",
+  "DEMASIADAS_CONSULTAS": "Hiciste demasiadas consultas. Intenta de nuevo en unos segundos."
+}

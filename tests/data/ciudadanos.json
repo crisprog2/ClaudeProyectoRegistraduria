@@ -1,1 +1,257 @@
-[]
+[
+  {
+    "id": "jurado_misma_mesa",
+    "descripcion": "Jurado titular en la misma mesa donde vota (caso del Figma). Sin segundo apellido.",
+    "smoke": true,
+    "cedula": "1098765432",
+    "fecha_nacimiento": "1990-03-14",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1098765432",
+        "nombre_completo": "Carlos Andrés Martínez"
+      },
+      "lugar_votacion": {
+        "mesa": 18,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia"
+      },
+      "jurado": {
+        "rol": "TITULAR",
+        "rol_display": "Jurado titular",
+        "mesa": 18,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia",
+        "misma_mesa": true
+      }
+    }
+  },
+  {
+    "id": "jurado_misma_mesa_29_febrero",
+    "descripcion": "Jurado titular en la misma mesa. Nacida un 29 de febrero.",
+    "smoke": false,
+    "cedula": "1143987654",
+    "fecha_nacimiento": "2000-02-29",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1143987654",
+        "nombre_completo": "María José Ortega Barrios"
+      },
+      "lugar_votacion": {
+        "mesa": 7,
+        "puesto": "Escuela Normal Brisas del Mar",
+        "direccion": "Carrera 46 # 72-30",
+        "ciudad": "Barranquilla",
+        "departamento": "Atlántico"
+      },
+      "jurado": {
+        "rol": "TITULAR",
+        "rol_display": "Jurado titular",
+        "mesa": 7,
+        "puesto": "Escuela Normal Brisas del Mar",
+        "direccion": "Carrera 46 # 72-30",
+        "ciudad": "Barranquilla",
+        "departamento": "Atlántico",
+        "misma_mesa": true
+      }
+    }
+  },
+  {
+    "id": "jurado_otra_mesa_mismo_puesto",
+    "descripcion": "Jurado remanente en otra mesa del mismo puesto. Sin segundo nombre; apellido con ñ.",
+    "smoke": true,
+    "cedula": "1017234568",
+    "fecha_nacimiento": "1993-10-02",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1017234568",
+        "nombre_completo": "Juliana Muñoz Restrepo"
+      },
+      "lugar_votacion": {
+        "mesa": 17,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia"
+      },
+      "jurado": {
+        "rol": "REMANENTE",
+        "rol_display": "Jurado remanente",
+        "mesa": 19,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia",
+        "misma_mesa": false
+      }
+    }
+  },
+  {
+    "id": "jurado_otra_mesa_cedula_8_digitos",
+    "descripcion": "Jurado remanente en otra mesa del mismo puesto. Cédula antigua de 8 dígitos.",
+    "smoke": false,
+    "cedula": "52748193",
+    "fecha_nacimiento": "1971-04-18",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "52748193",
+        "nombre_completo": "Martha Lucía Suárez Pinzón"
+      },
+      "lugar_votacion": {
+        "mesa": 2,
+        "puesto": "Colegio Distrital Nuevo Horizonte",
+        "direccion": "Carrera 15 # 85-40",
+        "ciudad": "Bogotá, D.C.",
+        "departamento": "Bogotá, D.C."
+      },
+      "jurado": {
+        "rol": "REMANENTE",
+        "rol_display": "Jurado remanente",
+        "mesa": 12,
+        "puesto": "Colegio Distrital Nuevo Horizonte",
+        "direccion": "Carrera 15 # 85-40",
+        "ciudad": "Bogotá, D.C.",
+        "departamento": "Bogotá, D.C.",
+        "misma_mesa": false
+      }
+    }
+  },
+  {
+    "id": "jurado_otro_puesto",
+    "descripcion": "Jurado titular en otro puesto de la misma ciudad.",
+    "smoke": true,
+    "cedula": "1036845120",
+    "fecha_nacimiento": "1987-05-27",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1036845120",
+        "nombre_completo": "Santiago Peña Ospina"
+      },
+      "lugar_votacion": {
+        "mesa": 1,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia"
+      },
+      "jurado": {
+        "rol": "TITULAR",
+        "rol_display": "Jurado titular",
+        "mesa": 5,
+        "puesto": "Institución Educativa Los Almendros",
+        "direccion": "Carrera 70 # 32-15",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia",
+        "misma_mesa": false
+      }
+    }
+  },
+  {
+    "id": "solo_votante",
+    "descripcion": "Solo votante (caso del Figma). Sin segundo apellido.",
+    "smoke": true,
+    "cedula": "1023456789",
+    "fecha_nacimiento": "1994-05-10",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1023456789",
+        "nombre_completo": "Laura Camila Gómez"
+      },
+      "lugar_votacion": {
+        "mesa": 12,
+        "puesto": "Colegio Cívico La Esperanza",
+        "direccion": "Calle 48 # 65-20",
+        "ciudad": "Medellín",
+        "departamento": "Antioquia"
+      },
+      "jurado": null
+    }
+  },
+  {
+    "id": "solo_votante_cali",
+    "descripcion": "Solo votante en otra ciudad y departamento.",
+    "smoke": false,
+    "cedula": "1144056789",
+    "fecha_nacimiento": "1995-12-09",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1144056789",
+        "nombre_completo": "Andrés Felipe Lozano Viveros"
+      },
+      "lugar_votacion": {
+        "mesa": 3,
+        "puesto": "Institución Educativa Río Claro",
+        "direccion": "Calle 5 # 38-12",
+        "ciudad": "Cali",
+        "departamento": "Valle del Cauca"
+      },
+      "jurado": null
+    }
+  },
+  {
+    "id": "solo_votante_cedula_8_digitos",
+    "descripcion": "Solo votante. Cédula antigua de 8 dígitos.",
+    "smoke": false,
+    "cedula": "79563214",
+    "fecha_nacimiento": "1962-11-05",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "79563214",
+        "nombre_completo": "Jorge Enrique Rodríguez Salazar"
+      },
+      "lugar_votacion": {
+        "mesa": 1,
+        "puesto": "Colegio Distrital Nuevo Horizonte",
+        "direccion": "Carrera 15 # 85-40",
+        "ciudad": "Bogotá, D.C.",
+        "departamento": "Bogotá, D.C."
+      },
+      "jurado": null
+    }
+  },
+  {
+    "id": "solo_votante_18_anios",
+    "descripcion": "Solo votante de 18 años, sin segundo nombre.",
+    "smoke": false,
+    "cedula": "1095827364",
+    "fecha_nacimiento": "2008-01-15",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "1095827364",
+        "nombre_completo": "Alex Ardila Cañas"
+      },
+      "lugar_votacion": {
+        "mesa": 2,
+        "puesto": "Colegio Integrado Cañaveral",
+        "direccion": "Calle 36 # 27-50",
+        "ciudad": "Bucaramanga",
+        "departamento": "Santander"
+      },
+      "jurado": null
+    }
+  },
+  {
+    "id": "solo_votante_cedula_7_digitos",
+    "descripcion": "Solo votante. Cédula antigua de 7 dígitos, mayor edad.",
+    "smoke": false,
+    "cedula": "4567891",
+    "fecha_nacimiento": "1948-08-30",
+    "esperado": {
+      "ciudadano": {
+        "cedula": "4567891",
+        "nombre_completo": "Luis Alberto Mendoza Herrera"
+      },
+      "lugar_votacion": {
+        "mesa": 1,
+        "puesto": "Institución Educativa Puerta del Sol",
+        "direccion": "Avenida Pedro de Heredia # 31-18",
+        "ciudad": "Cartagena de Indias",
+        "departamento": "Bolívar"
+      },
+      "jurado": null
+    }
+  }
+]

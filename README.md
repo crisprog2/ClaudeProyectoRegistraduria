@@ -112,7 +112,7 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | 404 | `CEDULA_NO_ENCONTRADA` | Cédula no registrada |
 | 400 / 415 | `SOLICITUD_INVALIDA` | El cuerpo no es un objeto JSON válido |
 | 405 | `METODO_NO_PERMITIDO` | Método distinto de POST |
-| 429 | `DEMASIADAS_CONSULTAS` | Más de 30 consultas por minuto desde la misma IP |
+| 429 | `DEMASIADAS_CONSULTAS` | Más de 30 consultas por minuto desde la misma IP (configurable con `CONSULTA_LIMITE_POR_MINUTO`) |
 
 ## Estrategia de pruebas
 
@@ -175,8 +175,9 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Admin de Django para revisar los datos | ✅ |
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
+| Pruebas black-box de la API (pytest + requests, 59 pruebas) | ✅ |
 | Frontend React | 🚧 Pendiente |
-| Pruebas black-box: API, BDD y E2E | 🚧 Pendiente |
+| Pruebas black-box: BDD y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -253,10 +254,29 @@ pytest
 
 pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar.
 
+### 7. Pruebas black-box de la API
+
+Se ejecutan contra el servidor en marcha y con los datos de demostración cargados. La suite hace unas 60 peticiones seguidas, así que el servidor se levanta con un límite de consultas alto. En una terminal:
+
+```powershell
+$env:CONSULTA_LIMITE_POR_MINUTO = "1000"
+cd backend
+python manage.py runserver
+```
+
+En otra terminal, desde la raíz del repositorio:
+
+```powershell
+pytest tests/api            # suite completa
+pytest tests/api -m smoke   # subconjunto crítico
+```
+
+La URL de la API se toma de `API_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000`). Si el servidor no está levantado, la corrida se detiene con instrucciones. Los casos y las respuestas esperadas están en [`tests/data/`](tests/data).
+
 ### Pendiente
 
 - Levantar el frontend
-- Pruebas black-box (API, BDD, E2E) y reportes
+- Pruebas BDD y E2E, y reportes
 
 ## Aviso
 

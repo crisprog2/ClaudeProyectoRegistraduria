@@ -1,0 +1,7 @@
+{
+  "claves_raiz": ["ciudadano", "lugar_votacion", "jurado"],
+  "claves_ciudadano": ["cedula", "nombre_completo", "edad"],
+  "claves_lugar_votacion": ["mesa", "puesto", "direccion", "ciudad", "departamento"],
+  "claves_jurado": ["rol", "rol_display", "mesa", "puesto", "direccion", "ciudad", "departamento", "misma_mesa"],
+  "claves_prohibidas": ["genero", "fecha_nacimiento", "id", "pk", "cod_mesa", "cod_puesto", "cod_ciudad", "cod_departamento"]
+}
