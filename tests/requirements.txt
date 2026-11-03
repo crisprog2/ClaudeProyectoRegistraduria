@@ -1,8 +1,8 @@
-# Dependencias de las pruebas black-box (API, BDD, E2E). Versiones por fijar en la fase de implementación.
-pytest
-pytest-bdd
-pytest-playwright
-playwright
-requests
-python-dotenv
-pytest-html
+# Dependencias de las pruebas black-box (API, BDD, E2E). Requiere Python 3.11.
+pytest==9.2.0
+pytest-bdd==9.0.1
+pytest-playwright==0.10.0
+playwright==1.64.1
+requests==2.34.2
+python-dotenv==1.2.4
+pytest-html==4.2.0

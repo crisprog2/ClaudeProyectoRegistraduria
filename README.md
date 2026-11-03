@@ -15,7 +15,7 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 
 | Capa | Tecnología |
 |------|------------|
-| Backend | Python, Django, Django REST Framework |
+| Backend | Python 3.11, Django 5.2 LTS, Django REST Framework |
 | Base de datos | MySQL 8.0 |
 | Frontend | React + Vite |
 | Pruebas unitarias / integración | pytest + pytest-django |
@@ -23,6 +23,69 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 | BDD | pytest-bdd (Gherkin en español) |
 | E2E / UI | Playwright para Python |
 | CI | GitHub Actions |
+
+## Modelo de datos
+
+Definido en [`backend/apps/consultas/models.py`](backend/apps/consultas/models.py).
+
+```mermaid
+erDiagram
+    DEPARTAMENTO ||--o{ CIUDAD : "tiene"
+    CIUDAD ||--o{ PUESTO_VOTACION : "tiene"
+    PUESTO_VOTACION ||--o{ MESA : "tiene"
+    MESA ||--o{ PERSONA : "vota en"
+    PERSONA ||--o| DESIGNACION_JURADO : "puede tener"
+    MESA ||--o{ DESIGNACION_JURADO : "sirve en"
+
+    DEPARTAMENTO {
+        string cod_departamento PK "2 caracteres"
+        string nombre
+    }
+    CIUDAD {
+        string cod_ciudad PK "5 caracteres"
+        string nombre
+        string cod_departamento FK
+    }
+    PUESTO_VOTACION {
+        string cod_puesto PK "hasta 10 caracteres"
+        string nombre
+        string direccion
+        string cod_ciudad FK
+    }
+    MESA {
+        bigint cod_mesa PK
+        smallint numero "único por puesto"
+        string cod_puesto FK
+    }
+    PERSONA {
+        string cedula PK "solo dígitos, hasta 10"
+        string primer_nombre
+        string segundo_nombre "opcional"
+        string primer_apellido
+        string segundo_apellido "opcional"
+        string genero "F, M u O"
+        date fecha_nacimiento
+        bigint cod_mesa FK "mesa donde vota"
+    }
+    DESIGNACION_JURADO {
+        bigint cod_designacion PK
+        string cedula FK "única: una designación por persona"
+        bigint cod_mesa_servicio FK "mesa donde sirve"
+        string rol "TITULAR o REMANENTE"
+    }
+```
+
+**Reglas de negocio reflejadas en el modelo**
+
+| Regla | Cómo se implementa |
+|-------|--------------------|
+| Una persona sin designación es **solo votante** | `DesignacionJurado` es opcional (relación 1 a 0..1 con `Persona`) |
+| Un jurado puede servir en una mesa o puesto **distinto** a donde vota | `Persona.mesa` y `DesignacionJurado.mesa_servicio` son relaciones independientes |
+| El puesto y la dirección de servicio no se duplican | Se obtienen a través de `mesa_servicio.puesto` |
+| No hay dos mesas con el mismo número en un puesto | Restricción `mesa_unica_por_puesto` |
+| La cédula admite valores de 10 dígitos sin desbordamiento | `cedula` es texto (`CharField(max_length=10)`), no entero |
+| La edad nunca queda desactualizada | No se almacena: se calcula desde `fecha_nacimiento` (`calcular_edad(fecha_referencia)`) |
+| Los datos de referencia no se borran en cascada | Las relaciones usan `PROTECT`; solo la designación se elimina con su persona |
 
 ## Estrategia de pruebas
 

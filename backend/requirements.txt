@@ -1,10 +1,11 @@
-# Dependencias del backend (API REST). Versiones por fijar en la fase de implementación.
-Django
-djangorestframework
-django-cors-headers
-mysqlclient
-python-dotenv
+# Dependencias del backend (API REST). Requiere Python 3.11.
+# Django se mantiene en la rama 5.2 LTS: Django 6 exige Python 3.12+.
+Django==5.2.19
+djangorestframework==3.18.3
+django-cors-headers==4.9.0
+mysqlclient==2.3.0
+python-dotenv==1.2.4
 
 # Pruebas white-box del backend
-pytest
-pytest-django
+pytest==9.2.0
+pytest-django==4.14.0

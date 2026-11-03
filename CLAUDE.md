@@ -20,7 +20,8 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
 
 ## Stack
 
-- **Backend**: Python + Django + Django REST Framework + MySQL 8.0.
+- **Backend**: Python 3.11 + Django 5.2 LTS + Django REST Framework + MySQL 8.0. No subir a Django 6: exige Python 3.12+.
+- **Entorno**: un solo entorno virtual en la raíz (`.venv/`) para backend y pruebas. Versiones fijadas con `==` en `backend/requirements.txt` y `tests/requirements.txt`. Navegadores de Playwright (Chromium, Firefox, WebKit) instalados fuera del repo.
 - **Base de datos**: servidor MySQL 8.0 **local** del usuario (servicio de Windows, puerto 3306). No se usa Docker. En CI se usa el contenedor `mysql:8.0` como servicio de GitHub Actions para mantener la misma versión mayor.
 - **Frontend**: React + Vite + react-router-dom.
 - **Pruebas** (todas en Python):
@@ -47,7 +48,29 @@ Layout común: `TopBar`, `SiteHeader`, `MainNav`, `FlagStripe`, `DemoBanner`, `B
 - La cédula viaja por **estado de navegación**, nunca en la URL.
 - La cédula se ingresa solo con dígitos y se **muestra formateada** con puntos (`1.098.765.432`).
 - Los estados de error (`FormError`, `ConsultaSinResultado`) no están diseñados en Figma; se diseñarán siguiendo el estilo existente.
-- **`backend/apps/consultas/models.py` lo escribe el usuario.** Claude solo revisa y sugiere ajustes; no lo redacta por iniciativa propia.
+- **`backend/apps/consultas/models.py` es del usuario.** Lo escribió el usuario y se ajustó con revisión de Claude. Cualquier cambio estructural al modelo se propone y se aplica solo con su aprobación.
+
+## Modelo de datos
+
+`backend/apps/consultas/models.py` (diagrama ER en el README):
+
+- `Departamento` (PK `cod_departamento`, 2 car.) → `Ciudad` (PK `cod_ciudad`, 5 car.) → `PuestoVotacion` (PK `cod_puesto`, ≤10 car.) → `Mesa` (PK `cod_mesa` autoincremental, `numero` único por puesto).
+- `Persona` (PK `cedula` CharField ≤10, solo dígitos) → `mesa` donde vota.
+- `DesignacionJurado`: OneToOne `persona` (`related_name='designacion_jurado'`), `mesa_servicio` y `rol` (`TITULAR` / `REMANENTE`).
+- Relaciones inversas: `departamento.ciudades`, `ciudad.puestos`, `puesto.mesas`, `mesa.votantes`, `mesa.jurados`.
+
+Reglas:
+- Es jurado ⇔ existe `DesignacionJurado` (`hasattr(persona, 'designacion_jurado')`). No hay campo booleano.
+- El puesto, la dirección, la ciudad y el departamento de servicio se obtienen de `mesa_servicio.puesto`; no se duplican.
+- `edad` no se guarda: es una propiedad calculada desde `fecha_nacimiento`. En pruebas usar `calcular_edad(fecha_referencia)` para que el resultado no dependa del día en que se ejecuta.
+- `PROTECT` en todas las FK de referencia; solo `DesignacionJurado.persona` usa `CASCADE`.
+- `segundo_nombre` y `segundo_apellido` son opcionales; `genero` admite `F`, `M` u `O`.
+- La validación de formato de la cédula (solo dígitos, longitud) va en `validators.py`, no en el modelo.
+
+Convenciones del modelo:
+- Campos en snake_case; las FK se nombran como el objeto (`departamento`, `puesto`, `mesa`) y usan `db_column='cod_*'`.
+- El nombre visible de cada entidad es `nombre` (no repetir el nombre del modelo).
+- Docstring por modelo con la lista de campos. Indentación de 4 espacios (PEP 8).
 
 ## Convenciones
 
@@ -65,4 +88,8 @@ Layout común: `TopBar`, `SiteHeader`, `MainNav`, `FlagStripe`, `DemoBanner`, `B
 
 ## Estado
 
-Fase actual: **estructura base creada, sin implementación**. Los archivos de código contienen solo un comentario de propósito. Las instrucciones de ejecución del README están pendientes.
+- ✅ Estructura base del monorepo.
+- ✅ Modelo de datos definido y revisado (validado con system checks y pruebas en SQLite en memoria).
+- ✅ Entorno virtual `.venv/` con dependencias fijadas y navegadores de Playwright.
+- ⏳ Siguiente: configurar `settings` de Django, crear la base de datos y el usuario en MySQL (el usuario ejecuta los comandos con su contraseña de root) y generar las migraciones.
+- ⏳ El resto de archivos de código siguen con solo un comentario de propósito. Las instrucciones de ejecución del README están pendientes.
