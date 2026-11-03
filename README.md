@@ -176,8 +176,9 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
 | Pruebas black-box de la API (pytest + requests, 59 pruebas) | ✅ |
+| Pruebas BDD (pytest-bdd, Gherkin en español, 14 casos contra la API) | ✅ |
 | Frontend React | 🚧 Pendiente |
-| Pruebas black-box: BDD y E2E | 🚧 Pendiente |
+| Pruebas BDD contra la interfaz y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -254,7 +255,7 @@ pytest
 
 pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar.
 
-### 7. Pruebas black-box de la API
+### 7. Pruebas black-box de la API y BDD
 
 Se ejecutan contra el servidor en marcha y con los datos de demostración cargados. La suite hace unas 60 peticiones seguidas, así que el servidor se levanta con un límite de consultas alto. En una terminal:
 
@@ -267,16 +268,19 @@ python manage.py runserver
 En otra terminal, desde la raíz del repositorio:
 
 ```powershell
-pytest tests/api            # suite completa
-pytest tests/api -m smoke   # subconjunto crítico
+pytest tests/api            # pruebas de la API
+pytest tests/bdd            # escenarios de negocio en Gherkin
+pytest tests/api tests/bdd -m smoke   # subconjunto crítico de ambas
 ```
+
+Los escenarios BDD están en [`tests/bdd/features/`](tests/bdd/features). Están escritos en lenguaje de negocio, así que cuando exista el frontend se ejecutarán también contra la interfaz.
 
 La URL de la API se toma de `API_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000`). Si el servidor no está levantado, la corrida se detiene con instrucciones. Los casos y las respuestas esperadas están en [`tests/data/`](tests/data).
 
 ### Pendiente
 
 - Levantar el frontend
-- Pruebas BDD y E2E, y reportes
+- Steps de interfaz para los features BDD, pruebas E2E y reportes
 
 ## Aviso
 

@@ -1,23 +1,7 @@
-"""Fixtures del nivel API: cliente HTTP compartido, mensajes de error y contrato de la respuesta."""
+"""Fixtures del nivel API: mensajes de error y contrato de la respuesta (el cliente 'api' está en tests/conftest.py)."""
 import pytest
 
-from support.api_client import ConsultaApiClient
 from support.data_loader import cargar
-
-
-@pytest.fixture(scope='session')
-def api():
-    """Cliente de la API. Si no hay servidor, detiene la corrida con instrucciones en vez de fallar caso por caso."""
-    cliente = ConsultaApiClient()
-    if not cliente.servidor_disponible():
-        pytest.exit(
-            f'No hay un servidor en {cliente.base_url}. Levanta el backend antes de correr tests/api:\n'
-            '    $env:CONSULTA_LIMITE_POR_MINUTO = "1000"\n'
-            '    cd backend; python manage.py runserver',
-            returncode=3,
-        )
-    yield cliente
-    cliente.cerrar()
 
 
 @pytest.fixture(scope='session')

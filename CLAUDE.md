@@ -126,6 +126,16 @@ Pruebas black-box de la API (`tests/api/`, 59, marker `api`; 14 también `smoke`
 - Datos en `tests/data/`: `ciudadanos.json`, `cedulas_invalidas.json`, `solicitudes_invalidas.json`, `mensajes_error.json` y `contrato_consulta.json`.
 - `pytest.ini` de la raíz agrega `pythonpath = tests` (imports `support.*`). Si no hay servidor, el fixture `api` detiene la corrida con instrucciones.
 - Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite.
+- El fixture `api` (cliente compartido por API y BDD) está en `tests/conftest.py`. Si no hay servidor, detiene la corrida con instrucciones.
+
+Pruebas BDD (`tests/bdd/`, 14 casos, tag `@bdd`; 6 también `@smoke`): 3 features en lenguaje de negocio, sin HTTP ni pantallas, para que sirvan también cuando exista el frontend. Por ahora los steps ejecutan contra la API.
+- `consulta_lugar_votacion.feature`: solo votante y cédula con espacios externos.
+- `consulta_jurado.feature`: jurado en la misma mesa, en otra mesa del mismo puesto y en otro puesto.
+- `validaciones_cedula.feature`: sin cédula, esquema de formato inválido (7 ejemplos) y no registrada.
+- Los "Dado" describen el tipo de ciudadano y toman el caso de `tests/data/ciudadanos.json`. Los mensajes del Figma y los ejemplos de cédulas inválidas van literales en el feature porque son la especificación.
+- El estado viaja entre steps en fixtures con `target_fixture` (`ciudadano`, `respuesta`). Los steps comunes están en `common_steps.py`, importados en `tests/bdd/conftest.py`.
+- Los casos de protocolo (405, 415, JSON mal formado) no van en Gherkin: solo en `tests/api/`.
+- Mutación verificada: si el serializer omite la designación fallan los 3 escenarios de jurado; si se acepta el 0 inicial falla su ejemplo.
 
 ## Convenciones
 
@@ -160,7 +170,8 @@ Pruebas black-box de la API (`tests/api/`, 59, marker `api`; 14 también `smoke`
 - ✅ Pruebas white-box del backend: 77 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
 - ✅ Pruebas black-box de la API: 59 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
-- ⏳ Siguiente: frontend React (pantallas del Figma), luego BDD y E2E.
+- ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
+- ⏳ Siguiente: frontend React (pantallas del Figma). Después, steps de interfaz para los mismos features y E2E con Playwright.
 
 ## Datos de demostración (`datos_demo.json`)
 
