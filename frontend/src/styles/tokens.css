@@ -1,1 +1,54 @@
-/* Tokens de diseño del Figma: colores, tipografía, espaciados y radios. */
+/*
+ * Tokens de diseño tomados del Figma (no tiene variables ni estilos propios:
+ * los valores salen de las pantallas). Los componentes usan solo estas variables.
+ */
+:root {
+  /* Marca y texto */
+  --color-azul-institucional: #102e50;
+  --color-texto: #142c43;
+  --color-texto-secundario: #53677b;
+  --color-texto-sobre-oscuro: #c3d2e2;
+  --color-texto-sobre-oscuro-suave: #dce8f5;
+
+  /* Acción y estados */
+  --color-primario: #1658c1;
+  --color-error: #c9454c;
+  --color-error-texto: #b3363d;
+  --color-exito: #23765a;
+  --color-acento: #f5c947;
+
+  /* Superficies */
+  --color-fondo: #f5f7fa;
+  --color-superficie: #ffffff;
+  --color-superficie-azul: #edf4ff;
+  --color-superficie-gris: #eaf0f5;
+  --color-superficie-verde: #edf7f1;
+  --color-superficie-aviso: #fffae8;
+  --color-superficie-error: #fbeeef;
+
+  /* Bordes */
+  --color-borde: #dce4ed;
+  --color-borde-campo: #9aabbe;
+  --color-borde-error: #f0c9cc;
+
+  /* Texto de marcador de posición en los campos */
+  --color-placeholder: #8a9bb0;
+
+  /* Tipografía */
+  --fuente-base: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Radios */
+  --radio-chico: 6px;
+  --radio-medio: 8px;
+  --radio-icono: 10px;
+  --radio-grande: 16px;
+  --radio-circulo: 100px;
+
+  /* Sombras */
+  --sombra-tarjeta: 0 5px 20px rgba(16, 46, 80, 0.03);
+  --sombra-flotante: 0 4px 12px rgba(16, 46, 80, 0.16);
+
+  /* Layout: el Figma mide 1440 px con 120 px de margen lateral (contenido de 1200 px). */
+  --ancho-contenido: 1200px;
+  --margen-lateral: 24px;
+}

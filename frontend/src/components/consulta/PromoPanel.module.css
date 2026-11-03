@@ -1,0 +1,150 @@
+/* Panel de 427 px de alto; las piezas de la ilustración usan las coordenadas del Figma. */
+.panel {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  height: 427px;
+  padding: 32px;
+  overflow: hidden;
+  border-radius: var(--radio-grande);
+  background: var(--color-azul-institucional);
+}
+
+.ilustracion {
+  position: absolute;
+  inset: 0;
+}
+
+.ilustracion > * {
+  position: absolute;
+}
+
+.haloExterior { left: 220px; top: -60px; }
+.haloInterior { left: 255px; top: -25px; }
+.sombra { left: 145px; top: 254px; }
+.detalle { left: 115px; top: 99px; }
+.destello { left: 379px; top: 214px; }
+
+/* Urna: tapa, frente blanco, lateral, ranura y círculo con check. */
+.urna {
+  left: 156px;
+  top: 128px;
+  width: 200px;
+  height: 136px;
+}
+
+.urna > * {
+  position: absolute;
+}
+
+.tapa { left: 0; top: 0; }
+.lateral { left: 175px; top: 0; }
+
+.frente {
+  left: 0;
+  top: 28px;
+  width: 175px;
+  height: 108px;
+  border-bottom-left-radius: 6px;
+  background: var(--color-superficie);
+}
+
+.ranura {
+  left: 48px;
+  top: 12px;
+  width: 100px;
+  height: 6px;
+  border-radius: 4px;
+  background: var(--color-azul-institucional);
+}
+
+.simbolo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  left: 64px;
+  top: 55px;
+  width: 47px;
+  height: 47px;
+  border-radius: var(--radio-circulo);
+  background: var(--color-superficie-azul);
+}
+
+/* Tarjetón amarillo girado 12°, centrado en la caja que ocupa en el Figma. */
+.tarjeton {
+  left: 199.98px;
+  top: 73.77px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 104px;
+  height: 95px;
+  padding: 17px;
+  border-radius: 6px;
+  background: var(--color-acento);
+  transform: rotate(12deg);
+}
+
+.marca {
+  width: 32px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(16, 46, 80, 0.31);
+}
+
+.seleccion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.opcion {
+  width: 34px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(16, 46, 80, 0.31);
+}
+
+/* Textos */
+.antetitulo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-texto-sobre-oscuro-suave);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+
+.acento {
+  width: 22px;
+  height: 3px;
+  background: var(--color-acento);
+}
+
+.mensaje {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 445px;
+  margin-bottom: 6px;
+}
+
+.titulo {
+  color: #ffffff;
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.detalleTexto {
+  color: var(--color-texto-sobre-oscuro);
+  font-size: 14px;
+  line-height: 1.5;
+}

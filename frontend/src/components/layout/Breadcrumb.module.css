@@ -1,0 +1,26 @@
+.ruta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.nivel {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.nivel a:hover {
+  color: var(--color-primario);
+}
+
+.separador {
+  display: flex;
+}
+
+.actual {
+  color: var(--color-texto);
+}

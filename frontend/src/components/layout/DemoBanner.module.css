@@ -1,0 +1,22 @@
+.aviso {
+  background: var(--color-superficie-aviso);
+  font-size: 13px;
+}
+
+.contenido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-height: 48px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.titulo {
+  color: var(--color-azul-institucional);
+}
+
+.detalle {
+  color: var(--color-texto-secundario);
+}

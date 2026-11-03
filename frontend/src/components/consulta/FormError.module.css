@@ -1,0 +1,11 @@
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-error-texto);
+  font-size: 13px;
+}
+
+.error img {
+  flex-shrink: 0;
+}

@@ -1,0 +1,35 @@
+.pie {
+  border-top: 1px solid var(--color-borde);
+  background: var(--color-superficie);
+}
+
+.contenido {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+
+.identidad {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.marca {
+  color: var(--color-azul-institucional);
+  font-size: 13px;
+}
+
+.aviso {
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+}
+
+.lema {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}

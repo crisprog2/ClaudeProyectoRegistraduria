@@ -177,7 +177,9 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
 | Pruebas black-box de la API (pytest + requests, 59 pruebas) | ✅ |
 | Pruebas BDD (pytest-bdd, Gherkin en español, 14 casos contra la API) | ✅ |
-| Frontend React | 🚧 Pendiente |
+| Frontend React: base y layout común (fase 1 de 4) | ✅ |
+| Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
+| Frontend React: pantalla de resultado | 🚧 En curso |
 | Pruebas BDD contra la interfaz y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 
@@ -277,9 +279,20 @@ Los escenarios BDD están en [`tests/bdd/features/`](tests/bdd/features). Están
 
 La URL de la API se toma de `API_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000`). Si el servidor no está levantado, la corrida se detiene con instrucciones. Los casos y las respuestas esperadas están en [`tests/data/`](tests/data).
 
+### 8. Frontend
+
+Requiere Node.js. Con el backend corriendo (paso 5), en otra terminal:
+
+```powershell
+cd frontend
+npm ci          # instala las versiones exactas de package-lock.json
+npm run dev     # http://localhost:5173
+```
+
+En desarrollo, Vite reenvía las peticiones a `/api` hacia el backend (`API_BASE_URL` del `.env`, por defecto `http://127.0.0.1:8000`), así que no hace falta configurar CORS.
+
 ### Pendiente
 
-- Levantar el frontend
 - Steps de interfaz para los features BDD, pruebas E2E y reportes
 
 ## Aviso

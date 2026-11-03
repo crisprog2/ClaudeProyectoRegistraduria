@@ -1,0 +1,44 @@
+.pasos {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}
+
+.indicador {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radio-circulo);
+  background: var(--color-superficie-gris);
+  font-size: 12px;
+}
+
+.actual {
+  color: var(--color-primario);
+}
+
+.actual .indicador {
+  background: var(--color-primario);
+  color: #ffffff;
+}
+
+.completado .indicador {
+  background: var(--color-superficie-azul);
+}
+
+.conector {
+  width: 36px;
+  height: 1px;
+  background: var(--color-borde);
+}

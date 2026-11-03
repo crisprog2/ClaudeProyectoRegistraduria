@@ -1,0 +1,72 @@
+.encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+
+.textos {
+  display: flex;
+  flex-direction: column;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-weight: 700;
+}
+
+.subtitulo {
+  color: var(--color-texto-secundario);
+}
+
+/* Variante portada (pantalla de consulta) */
+.portada {
+  align-items: flex-start;
+}
+
+.portada .textos {
+  gap: 12px;
+  max-width: 790px;
+}
+
+.antetitulo {
+  color: var(--color-primario);
+  font-size: 12px;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+}
+
+.portada .titulo {
+  font-size: 44px;
+  line-height: 1.12;
+  letter-spacing: -1.6px;
+}
+
+/* El Figma usa 740 px, pero la línea queda justa: con Inter Variable se cortaba una palabra antes. */
+.portada .subtitulo {
+  max-width: 760px;
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+.portada .extremo {
+  padding-top: 30px;
+}
+
+/* Variante sección (pantalla de resultado) */
+.seccion {
+  align-items: center;
+}
+
+.seccion .textos {
+  gap: 9px;
+}
+
+.seccion .titulo {
+  font-size: 34px;
+  letter-spacing: -1px;
+}
+
+.seccion .subtitulo {
+  font-size: 16px;
+}

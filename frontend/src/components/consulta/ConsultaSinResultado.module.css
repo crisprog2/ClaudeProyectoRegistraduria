@@ -1,0 +1,30 @@
+.panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-borde-error);
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie-error);
+}
+
+.panel img {
+  flex-shrink: 0;
+}
+
+.textos {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.detalle {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}

@@ -1,0 +1,19 @@
+.franja {
+  display: flex;
+  height: 3px;
+}
+
+.amarillo {
+  flex: 2;
+  background: var(--color-acento);
+}
+
+.azul {
+  flex: 1;
+  background: var(--color-primario);
+}
+
+.rojo {
+  flex: 1;
+  background: var(--color-error);
+}

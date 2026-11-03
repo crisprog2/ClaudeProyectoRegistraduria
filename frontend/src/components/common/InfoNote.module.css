@@ -1,0 +1,12 @@
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.nota img {
+  flex-shrink: 0;
+}

@@ -1,0 +1,96 @@
+/* Alto mínimo del Figma (427 px); con un error largo la tarjeta crece en lugar de recortarse. */
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 650px;
+  max-width: 100%;
+  min-height: 427px;
+  padding: 32px;
+  box-shadow: var(--sombra-tarjeta);
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icono {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radio-icono);
+  background: var(--color-superficie-azul);
+}
+
+.textosEncabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.4px;
+}
+
+.subtitulo {
+  color: var(--color-texto-secundario);
+  font-size: 14px;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.etiqueta {
+  color: var(--color-texto);
+  font-size: 14px;
+}
+
+.ayuda {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}
+
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--color-primario);
+  border-radius: var(--radio-medio);
+  background: var(--color-primario);
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.boton:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.boton:disabled {
+  cursor: progress;
+  opacity: 0.8;
+}
+
+.nota {
+  padding-top: 2px;
+}

@@ -1,0 +1,36 @@
+.paso {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.icono {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie);
+}
+
+.textos {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.descripcion {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+  line-height: 1.5;
+}

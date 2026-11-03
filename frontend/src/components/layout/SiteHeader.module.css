@@ -1,0 +1,44 @@
+.header {
+  background: var(--color-superficie);
+}
+
+.contenido {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 96px;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.emblema {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radio-icono);
+  background: var(--color-azul-institucional);
+}
+
+.nombres {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.nombre {
+  color: var(--color-azul-institucional);
+  font-size: 19px;
+  letter-spacing: 0.6px;
+}
+
+.subtitulo {
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+}

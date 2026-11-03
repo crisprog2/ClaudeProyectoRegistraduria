@@ -137,6 +137,26 @@ Pruebas BDD (`tests/bdd/`, 14 casos, tag `@bdd`; 6 también `@smoke`): 3 feature
 - Los casos de protocolo (405, 415, JSON mal formado) no van en Gherkin: solo en `tests/api/`.
 - Mutación verificada: si el serializer omite la designación fallan los 3 escenarios de jurado; si se acepta el 0 inicial falla su ejemplo.
 
+## Frontend
+
+Se construye por fases y cada una se revisa con capturas de Playwright a 1440 px comparadas con el Figma: 1) base y layout, 2) consulta, 3) resultado, 4) accesibilidad, ajuste a pantallas pequeñas, 404 y documentación.
+
+Decisiones:
+- **Conexión con la API**: en desarrollo Vite reenvía `/api` al backend (`API_BASE_URL`, por defecto `http://127.0.0.1:8000`). El navegador ve un solo origen y no depende de CORS. `vite.config.js` lee el `.env` de la raíz (`envDir: '..'`); solo las variables `VITE_*` llegan al navegador.
+- **Flujo de datos**: `ConsultaPage` llama a la API y, si sale bien, navega a `/consulta/resultado` con el resultado en el estado de navegación. Si alguien recarga o entra directo al resultado, vuelve a `/consulta`.
+- **Validación en el navegador**: las mismas reglas del backend (6 a 10 dígitos, sin 0 inicial). El backend sigue siendo la regla definitiva.
+- **Selectores para pruebas**: HTML semántico y accesible (`label`, roles, `aria-current`, `aria-invalid`, `aria-live`). `data-testid` solo si no hay alternativa.
+- **Estilos**: CSS Modules (`Componente.module.css`) y variables de `styles/tokens.css`; no hay valores de color sueltos en los componentes. `global.css` define `.contenedor` (1200 px centrados, que a 1440 px dejan los 120 px de margen del Figma) y `.solo-lector`.
+- **Fuente**: Inter instalada en el proyecto (`@fontsource-variable/inter`), sin peticiones a Google Fonts.
+- **Íconos**: SVG descargados del Figma en `src/assets/iconos/`, con nombres en español.
+- **Mapa**: ilustración estática con el aviso "ILUSTRATIVO", sin servicios de mapas externos.
+- **Errores no diseñados en el Figma** (429 y servidor caído): reutilizan el panel de `ConsultaSinResultado` con su propio texto ("Hiciste demasiadas consultas" / "No pudimos completar la consulta").
+- **Estados de la consulta**: debajo del campo se muestra solo una cosa, en lugar de la ayuda: `FormError` (vacío o formato; borde rojo de 2 px, `aria-invalid`, foco al campo) o `ConsultaSinResultado` (no encontrada, 429, sin conexión; borde normal). Ambos con `role="alert"`. Al editar el campo el error desaparece. El campo tiene placeholder "Ej.: 1023456789".
+- **Colores de error** (de los frames de error del Figma): borde `#c9454c`, texto `#b3363d`, panel `#fbeeef` con borde `#f0c9cc`.
+- **Versiones exactas** en `package.json` (sin `^`) y `package-lock.json` versionado.
+- Las constantes de las rutas viven en `utils/rutas.js` para evitar una importación circular entre `routes.jsx` y las páginas.
+- "Cómo consultar" y "Ayuda" son `<a aria-disabled="true">` sin `href`: se ven como enlaces, pero no se pueden enfocar ni navegar.
+
 ## Convenciones
 
 - **Idioma**: dominio, nombres de archivos, componentes, tests y features en español (`ConsultaPage`, `test_validaciones_cedula.py`). Términos técnicos estándar en inglés (`conftest`, `services`, `hooks`).
@@ -171,7 +191,10 @@ Pruebas BDD (`tests/bdd/`, 14 casos, tag `@bdd`; 6 también `@smoke`): 3 feature
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
 - ✅ Pruebas black-box de la API: 59 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
-- ⏳ Siguiente: frontend React (pantallas del Figma). Después, steps de interfaz para los mismos features y E2E con Playwright.
+- ✅ Frontend fase 1: dependencias con versiones exactas, Vite con proxy, router, tokens y layout común (TopBar, SiteHeader, MainNav, FlagStripe, DemoBanner, Breadcrumb, Stepper, PageHeading, SiteFooter). Capturas comparadas con el Figma.
+- ✅ Frontend fase 2: pantalla de consulta completa (`CedulaForm`, `PromoPanel`, `PasosConsulta`), validación en el cliente, `services/api.js`, hook `useConsultaCedula` y los 3 estados de error del Figma, más 429 y servidor caído. Verificado con Playwright: los errores del campo no llaman a la API, el foco vuelve al campo y la consulta exitosa navega sin la cédula en la URL.
+- ⏳ Siguiente: frontend fase 3 (pantalla de resultado: votante y jurado). Después, fase 4, steps de interfaz para los mismos features y E2E con Playwright.
+- ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. Para la fase 3 ya se tiene el diseño del votante (`6:2442`); el del jurado (`6:2609`) habrá que pedirlo cuando haya cupo o con capturas del usuario.
 
 ## Datos de demostración (`datos_demo.json`)
 

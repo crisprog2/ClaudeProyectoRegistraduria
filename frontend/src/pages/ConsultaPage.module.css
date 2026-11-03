@@ -1,0 +1,12 @@
+.pagina {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Formulario (650 px) y panel "Tu voz cuenta" (resto del ancho). */
+.consulta {
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+}

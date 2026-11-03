@@ -1,0 +1,17 @@
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 5px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.pasos {
+  display: flex;
+  gap: 32px;
+}
