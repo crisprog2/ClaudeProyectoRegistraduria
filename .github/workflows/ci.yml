@@ -1,0 +1,33 @@
+# Placeholder de CI. Los pasos de ejecución se completarán en la fase de implementación.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-tests:
+    name: Backend (pytest-django)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pendiente
+        run: echo "Pendiente - instalar backend/requirements.txt y ejecutar pytest en backend/"
+
+  black-box-tests:
+    name: API, BDD y E2E
+    runs-on: ubuntu-latest
+    needs: backend-tests
+    # Pendiente: servicio MySQL (contenedor mysql:8.0, misma versión mayor que el entorno local),
+    # levantar backend y frontend antes de las pruebas.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pruebas de API
+        run: echo "Pendiente - pytest -m api"
+      - name: Pruebas BDD
+        run: echo "Pendiente - pytest -m bdd"
+      - name: Pruebas E2E
+        run: echo "Pendiente - playwright install y pytest -m e2e"
+      # Pendiente: publicar reportes (pytest-html, trazas de Playwright) como artefactos.

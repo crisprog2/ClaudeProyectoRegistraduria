@@ -1,0 +1,8 @@
+# Dependencias de las pruebas black-box (API, BDD, E2E). Versiones por fijar en la fase de implementación.
+pytest
+pytest-bdd
+pytest-playwright
+playwright
+requests
+python-dotenv
+pytest-html

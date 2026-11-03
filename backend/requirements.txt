@@ -1,0 +1,10 @@
+# Dependencias del backend (API REST). Versiones por fijar en la fase de implementación.
+Django
+djangorestframework
+django-cors-headers
+mysqlclient
+python-dotenv
+
+# Pruebas white-box del backend
+pytest
+pytest-django

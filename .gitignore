@@ -1,0 +1,43 @@
+# --- Entorno y secretos ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# --- Django ---
+*.log
+db.sqlite3
+staticfiles/
+media/
+
+# --- Node / Vite ---
+node_modules/
+dist/
+.vite/
+npm-debug.log*
+
+# --- Reportes y artefactos de pruebas ---
+reports/
+test-results/
+playwright-report/
+*.trace.zip
+screenshots/
+videos/
+report.html
+
+# --- IDE / SO ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

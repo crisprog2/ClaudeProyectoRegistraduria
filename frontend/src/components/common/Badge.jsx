@@ -1,0 +1,1 @@
+// Etiqueta corta (DATOS FICTICIOS, JURADO, ILUSTRATIVO).
