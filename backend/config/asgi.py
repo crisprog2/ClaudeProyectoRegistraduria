@@ -1,1 +1,8 @@
-# Punto de entrada ASGI para servidores de aplicación.
+"""Punto de entrada ASGI para servidores de aplicación."""
+import os
+
+from django.core.asgi import get_asgi_application
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
+
+application = get_asgi_application()

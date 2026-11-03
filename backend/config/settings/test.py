@@ -1,1 +1,14 @@
-# Settings para la ejecución de pruebas con pytest-django.
+"""
+Settings para la ejecución de pruebas con pytest-django.
+
+Usa el mismo motor que producción (MySQL) para que las restricciones, los
+largos máximos y el modo estricto se comporten igual que en la realidad.
+pytest-django crea y destruye la base 'test_<MYSQL_DATABASE>' en cada corrida.
+"""
+from .base import *  # noqa: F401,F403
+
+DEBUG = False
+ALLOWED_HOSTS = ['testserver', 'localhost', '127.0.0.1']
+
+# Hash de contraseñas rápido: solo afecta la velocidad de las pruebas.
+PASSWORD_HASHERS = ['django.contrib.auth.hashers.MD5PasswordHasher']

@@ -1,1 +1,1 @@
-# Paquete de settings divididos por entorno (base, local, test).
+# Settings divididos por entorno: base (común), local (desarrollo) y test (pytest-django).

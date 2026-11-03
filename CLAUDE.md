@@ -91,5 +91,7 @@ Convenciones del modelo:
 - ✅ Estructura base del monorepo.
 - ✅ Modelo de datos definido y revisado (validado con system checks y pruebas en SQLite en memoria).
 - ✅ Entorno virtual `.venv/` con dependencias fijadas y navegadores de Playwright.
-- ⏳ Siguiente: configurar `settings` de Django, crear la base de datos y el usuario en MySQL (el usuario ejecuta los comandos con su contraseña de root) y generar las migraciones.
+- ✅ Settings de Django (`base` / `local` / `test`) leyendo del `.env` de la raíz. `manage.py` usa `local` por defecto y `backend/pytest.ini` usa `test`.
+- ✅ Base local `registraduria` (utf8mb4_0900_ai_ci, modo estricto) con usuario `consultavoto_app`, que solo tiene permisos sobre `registraduria` y `test_registraduria`. Migración `0001_initial` aplicada.
+- ⏳ Siguiente: datos ficticios de prueba (fixture `datos_demo.json`) y superusuario para el admin.
 - ⏳ El resto de archivos de código siguen con solo un comentario de propósito. Las instrucciones de ejecución del README están pendientes.
