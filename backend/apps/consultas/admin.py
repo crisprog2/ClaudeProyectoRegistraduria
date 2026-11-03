@@ -103,9 +103,8 @@ class PersonaAdmin(admin.ModelAdmin):
 
     @admin.display(description='Nombre completo', ordering='primer_apellido')
     def nombre_completo(self, obj):
-        """Nombres y apellidos, omitiendo los opcionales que estén vacíos."""
-        partes = (obj.primer_nombre, obj.segundo_nombre, obj.primer_apellido, obj.segundo_apellido)
-        return ' '.join(parte for parte in partes if parte)
+        """Columna ordenable que muestra Persona.nombre_completo."""
+        return obj.nombre_completo
 
     @admin.display(description='Puesto', ordering='mesa__puesto__nombre')
     def puesto(self, obj):

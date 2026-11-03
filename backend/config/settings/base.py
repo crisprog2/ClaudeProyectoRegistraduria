@@ -126,6 +126,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    # Todas las respuestas de error con el formato {codigo, mensaje}.
+    'EXCEPTION_HANDLER': 'apps.consultas.exceptions.manejador_de_errores',
+    # Límite de consultas por IP para evitar recorridos masivos de cédulas.
+    'DEFAULT_THROTTLE_RATES': {'consulta': '30/min'},
+    # 0 = identificar al cliente por REMOTE_ADDR. Con el valor por defecto (None)
+    # DRF usa X-Forwarded-For, que el cliente puede falsificar para evadir el límite.
+    # Si se despliega detrás de un proxy, poner aquí el número de proxies de confianza.
+    'NUM_PROXIES': 0,
 }
 
 CORS_ALLOWED_ORIGINS = env_lista('CORS_ALLOWED_ORIGINS')

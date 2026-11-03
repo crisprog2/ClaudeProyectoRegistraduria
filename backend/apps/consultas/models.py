@@ -152,6 +152,17 @@ class Persona(models.Model):
         """Edad actual en años cumplidos. No se guarda en la base de datos."""
         return self.calcular_edad()
 
+    @property
+    def nombre_completo(self):
+        """
+        Nombres y apellidos, omitiendo los opcionales vacíos.
+
+        Ejemplos: 'Carlos Andrés Martínez' (sin segundo apellido),
+        'Juliana Muñoz Restrepo' (sin segundo nombre).
+        """
+        partes = (self.primer_nombre, self.segundo_nombre, self.primer_apellido, self.segundo_apellido)
+        return ' '.join(parte for parte in partes if parte)
+
     def __str__(self):
         """Ejemplo: 'Carlos Martínez' (primer nombre y primer apellido)."""
         return f"{self.primer_nombre} {self.primer_apellido}"

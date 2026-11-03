@@ -91,6 +91,29 @@ erDiagram
 
 El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) usa la **división política real** de Colombia (33 departamentos con códigos DIVIPOLA del DANE) y datos **inventados** para puestos, mesas y personas. Las cédulas siguen el formato colombiano, de 7 a 10 dígitos. Cada persona cubre un escenario de prueba: solo votante, jurado en la misma mesa, jurado en otra mesa del mismo puesto y jurado en otro puesto, además de casos borde (sin segundo nombre o apellido, nacimiento un 29 de febrero, cédulas antiguas).
 
+## API
+
+`POST /api/consulta/` con `{"cedula": "1098765432"}`. La cédula va en el cuerpo y no en la URL, para que no quede registrada en logs ni historiales.
+
+```json
+{
+  "ciudadano": { "cedula": "1098765432", "nombre_completo": "Carlos Andrés Martínez", "edad": 36 },
+  "lugar_votacion": { "mesa": 18, "puesto": "Colegio Cívico La Esperanza", "direccion": "Calle 48 # 65-20", "ciudad": "Medellín", "departamento": "Antioquia" },
+  "jurado": { "rol": "TITULAR", "rol_display": "Jurado titular", "mesa": 18, "puesto": "Colegio Cívico La Esperanza", "direccion": "Calle 48 # 65-20", "ciudad": "Medellín", "departamento": "Antioquia", "misma_mesa": true }
+}
+```
+
+`jurado` es `null` cuando la persona solo vota. Todos los errores responden `{"codigo", "mensaje"}`:
+
+| HTTP | `codigo` | Cuándo |
+|------|----------|--------|
+| 400 | `CEDULA_REQUERIDA` | Cédula vacía o ausente |
+| 400 | `CEDULA_FORMATO_INVALIDO` | No son de 6 a 10 dígitos sin 0 inicial (letras, puntos, comas, espacios internos) |
+| 404 | `CEDULA_NO_ENCONTRADA` | Cédula no registrada |
+| 400 / 415 | `SOLICITUD_INVALIDA` | El cuerpo no es un objeto JSON válido |
+| 405 | `METODO_NO_PERMITIDO` | Método distinto de POST |
+| 429 | `DEMASIADAS_CONSULTAS` | Más de 30 consultas por minuto desde la misma IP |
+
 ## Estrategia de pruebas
 
 ```
@@ -150,9 +173,10 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Settings de Django por entorno (`local`, `test`) | ✅ |
 | Datos de demostración (fixture) | ✅ |
 | Admin de Django para revisar los datos | ✅ |
-| API REST de consulta (validadores, servicio, vista) | 🚧 Pendiente |
+| API REST de consulta (`POST /api/consulta/`) | ✅ |
+| Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
 | Frontend React | 🚧 Pendiente |
-| Pruebas unitarias, API, BDD y E2E | 🚧 Pendiente |
+| Pruebas black-box: API, BDD y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -213,10 +237,26 @@ python manage.py runserver
 
 Admin en http://127.0.0.1:8000/admin/: muestra departamentos, ciudades, puestos, mesas, personas (con filtro "es jurado") y designaciones de jurado.
 
+Probar la API desde PowerShell (con el servidor corriendo):
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/consulta/ `
+  -ContentType 'application/json' -Body '{"cedula": "1098765432"}' | ConvertTo-Json -Depth 5
+```
+
+### 6. Pruebas del backend
+
+```powershell
+cd backend
+pytest
+```
+
+pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar.
+
 ### Pendiente
 
 - Levantar el frontend
-- Correr cada suite de pruebas y generar reportes
+- Pruebas black-box (API, BDD, E2E) y reportes
 
 ## Aviso
 

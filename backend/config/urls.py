@@ -1,7 +1,8 @@
-"""Enrutamiento raíz del proyecto. Las URLs de la API se montarán bajo /api/ cuando exista el endpoint."""
+"""Enrutamiento raíz del proyecto: admin de Django y API bajo /api/."""
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('apps.consultas.urls')),
 ]

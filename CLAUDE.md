@@ -76,6 +76,7 @@ Layout común: `TopBar`, `SiteHeader`, `MainNav`, `FlagStripe`, `DemoBanner`, `B
 Reglas:
 - Es jurado ⇔ existe `DesignacionJurado` (`hasattr(persona, 'designacion_jurado')`). No hay campo booleano.
 - El puesto, la dirección, la ciudad y el departamento de servicio se obtienen de `mesa_servicio.puesto`; no se duplican.
+- `nombre_completo` es una propiedad del modelo (omite segundo nombre/apellido vacíos); el admin y la API la reutilizan.
 - `edad` no se guarda: es una propiedad calculada desde `fecha_nacimiento`. En pruebas usar `calcular_edad(fecha_referencia)` para que el resultado no dependa del día en que se ejecuta.
 - `PROTECT` en todas las FK de referencia; solo `DesignacionJurado.persona` usa `CASCADE`.
 - `segundo_nombre` y `segundo_apellido` son opcionales; `genero` admite `F`, `M` u `O`.
@@ -94,6 +95,27 @@ Convenciones del modelo:
 - `PersonaAdmin`: columnas de edad calculada, puesto y "es jurado"; filtro propio `EsJuradoFilter` (sí/no); la designación se edita en la misma ficha (`DesignacionJuradoInline`, máximo 1).
 - `DesignacionJuradoAdmin`: columna "vota en la misma mesa".
 
+## API REST de consulta
+
+`POST /api/consulta/` con `{"cedula": "..."}` (la cédula nunca va en la URL). Capas:
+- `validators.validar_cedula()`: quita espacios externos; exige texto de **6 a 10 dígitos ASCII sin 0 inicial**. Lanza `django.core.exceptions.ValidationError` con código `CEDULA_REQUERIDA` o `CEDULA_FORMATO_INVALIDO` (no depende de DRF).
+- `services.consultar_por_cedula()`: una sola consulta SQL (`select_related`, incluida la designación); lanza `CedulaNoEncontrada`.
+- `serializers.ResultadoConsultaSerializer`: `ciudadano` (cedula, nombre_completo, edad), `lugar_votacion` (mesa, puesto, direccion, ciudad, departamento) y `jurado` (rol, rol_display, ubicación de la mesa de servicio, misma_mesa) o `null`. La edad usa `timezone.localdate()`. Nunca expone género, fecha de nacimiento ni IDs internos.
+- `views.ConsultaView`: solo POST, solo JSON, sin autenticación (por eso sin CSRF), límite `ConsultaRateThrottle`.
+- `exceptions.manejador_de_errores` (EXCEPTION_HANDLER): todas las respuestas de error son `{"codigo", "mensaje"}`.
+
+| HTTP | `codigo` |
+|---|---|
+| 400 | `CEDULA_REQUERIDA`, `CEDULA_FORMATO_INVALIDO`, `SOLICITUD_INVALIDA` (JSON mal formado o que no es objeto) |
+| 404 | `CEDULA_NO_ENCONTRADA` |
+| 405 | `METODO_NO_PERMITIDO` |
+| 415 | `SOLICITUD_INVALIDA` (no es JSON) |
+| 429 | `DEMASIADAS_CONSULTAS` (más de 30/min por IP; incluye `Retry-After`) |
+
+Los mensajes son los textos del Figma. Seguridad: `NUM_PROXIES = 0` hace que el límite use `REMOTE_ADDR`; con el valor por defecto de DRF se podría evadir falsificando `X-Forwarded-For` (hay una prueba que lo verifica).
+
+Pruebas white-box (`backend/tests/`, 77): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL") y `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+
 ## Convenciones
 
 - **Idioma**: dominio, nombres de archivos, componentes, tests y features en español (`ConsultaPage`, `test_validaciones_cedula.py`). Términos técnicos estándar en inglés (`conftest`, `services`, `hooks`).
@@ -107,7 +129,8 @@ Convenciones del modelo:
   - Markers declarados en `pytest.ini` (`api`, `bdd`, `e2e`, `smoke`, `regression`); `--strict-markers` activo.
   - Escenarios mínimos a cubrir: solo votante, jurado en la misma mesa, jurado en otra mesa o puesto, campo vacío, formato inválido y cédula no encontrada.
 - **Configuración**: todo por variables de entorno (ver `.env.example`); nunca subir `.env`.
-- **Documentación del código**: docstring en cada módulo, clase y función pública, en español. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring.
+- **Documentación del código**: docstring en cada módulo, clase y función pública, en español. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring. En pruebas, el nombre `test_*` describe el caso; el docstring solo se agrega cuando la intención no es obvia.
+- **Pruebas que importan**: cuando una prueba protege una regla de seguridad o de negocio, comprobar al menos una vez que falla si se reintroduce el defecto (prueba de mutación), no solo que pasa.
 - **Al terminar una tarea**: actualizar la sección "Estado" de este archivo y, si cambia algo visible para quien usa el repo, el README (tabla "Estado del proyecto" y "Ejecución").
 
 ## Estado
@@ -122,7 +145,9 @@ Convenciones del modelo:
 - ✅ Código del backend documentado con docstrings; README con instrucciones de ejecución del backend.
 - ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
-- ⏳ Siguiente: API REST de consulta (`validators.py`, `services.py`, `serializers.py`, `views.py`, `urls.py`) y datos de `tests/data/`.
+- ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
+- ✅ Pruebas white-box del backend: 77 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
+- ⏳ Siguiente: datos de `tests/data/` y pruebas black-box de API (`tests/api/`), o empezar el frontend.
 
 ## Datos de demostración (`datos_demo.json`)
 
