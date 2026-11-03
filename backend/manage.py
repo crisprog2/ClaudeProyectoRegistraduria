@@ -5,6 +5,7 @@ import sys
 
 
 def main():
+    """Ejecuta el comando indicado usando los settings de desarrollo local por defecto."""
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.local')
     try:
         from django.core.management import execute_from_command_line

@@ -71,6 +71,14 @@ Convenciones del modelo:
 - Campos en snake_case; las FK se nombran como el objeto (`departamento`, `puesto`, `mesa`) y usan `db_column='cod_*'`.
 - El nombre visible de cada entidad es `nombre` (no repetir el nombre del modelo).
 - Docstring por modelo con la lista de campos. Indentación de 4 espacios (PEP 8).
+- `__str__` legible, sin IDs internos: `Mesa 018 · Colegio Cívico La Esperanza`, `Jurado titular · Carlos Martínez · Mesa 018 · Colegio Cívico La Esperanza`. Los de `Mesa` y `DesignacionJurado` leen modelos relacionados: en listados usar `select_related`. Cambiar un `__str__` no genera migración.
+
+## Admin de Django
+
+`backend/apps/consultas/admin.py` registra los 6 modelos para revisar los datos de demostración:
+- Listados con `list_select_related` (sin consultas por fila) y `autocomplete_fields` para las relaciones (el admin relacionado debe tener `search_fields`).
+- `PersonaAdmin`: columnas de edad calculada, puesto y "es jurado"; filtro propio `EsJuradoFilter` (sí/no); la designación se edita en la misma ficha (`DesignacionJuradoInline`, máximo 1).
+- `DesignacionJuradoAdmin`: columna "vota en la misma mesa".
 
 ## Convenciones
 
@@ -85,6 +93,8 @@ Convenciones del modelo:
   - Markers declarados en `pytest.ini` (`api`, `bdd`, `e2e`, `smoke`, `regression`); `--strict-markers` activo.
   - Escenarios mínimos a cubrir: solo votante, jurado en la misma mesa, jurado en otra mesa o puesto, campo vacío, formato inválido y cédula no encontrada.
 - **Configuración**: todo por variables de entorno (ver `.env.example`); nunca subir `.env`.
+- **Documentación del código**: docstring en cada módulo, clase y función pública, en español. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring.
+- **Al terminar una tarea**: actualizar la sección "Estado" de este archivo y, si cambia algo visible para quien usa el repo, el README (tabla "Estado del proyecto" y "Ejecución").
 
 ## Estado
 
@@ -93,5 +103,28 @@ Convenciones del modelo:
 - ✅ Entorno virtual `.venv/` con dependencias fijadas y navegadores de Playwright.
 - ✅ Settings de Django (`base` / `local` / `test`) leyendo del `.env` de la raíz. `manage.py` usa `local` por defecto y `backend/pytest.ini` usa `test`.
 - ✅ Base local `registraduria` (utf8mb4_0900_ai_ci, modo estricto) con usuario `consultavoto_app`, que solo tiene permisos sobre `registraduria` y `test_registraduria`. Migración `0001_initial` aplicada.
-- ⏳ Siguiente: datos ficticios de prueba (fixture `datos_demo.json`) y superusuario para el admin.
+- ✅ Fixture `backend/apps/consultas/fixtures/datos_demo.json` cargado en `registraduria` (`python manage.py loaddata datos_demo`).
+- ✅ Admin de Django configurado para los 6 modelos; `__str__` legibles en `Mesa` y `DesignacionJurado`.
+- ✅ Código del backend documentado con docstrings; README con instrucciones de ejecución del backend.
+- ⏳ El superusuario lo crea el usuario (`python manage.py createsuperuser`); pide contraseña.
+- ⏳ Siguiente: API REST de consulta (`validators.py`, `services.py`, `serializers.py`, `views.py`, `urls.py`) y datos de `tests/data/`.
+
+## Datos de demostración (`datos_demo.json`)
+
+- **Geografía real (pública):** los 33 departamentos con código DIVIPOLA del DANE, sus capitales y algunos municipios extra (39 ciudades).
+- **Todo lo demás es ficticio:** puestos (código = municipio 5 + zona 2 + puesto 2), mesas, personas y designaciones. Las cédulas siguen el formato colombiano (antiguas de 7-8 dígitos, actuales de 10); cualquier coincidencia con una cédula real es accidental.
+
+| Cédula | Escenario |
+|---|---|
+| `1098765432` | Jurado titular en la **misma mesa** donde vota (caso del Figma: Carlos Andrés Martínez, Mesa 018, Colegio Cívico La Esperanza, Medellín). Sin segundo apellido. |
+| `1143987654` | Jurado titular en la misma mesa. Nacida un 29 de febrero. |
+| `1017234568` | Jurado remanente en **otra mesa del mismo puesto**. Sin segundo nombre; apellido con ñ. |
+| `52748193` | Jurado remanente en otra mesa del mismo puesto. Cédula antigua de 8 dígitos. |
+| `1036845120` | Jurado titular en **otro puesto** de la misma ciudad. |
+| `1023456789` | Solo votante (ejemplo del input en el Figma). |
+| `1144056789` | Solo votante. |
+| `79563214` | Solo votante. Cédula antigua de 8 dígitos. |
+| `1095827364` | Solo votante. 18 años, género O, sin segundo nombre. |
+| `4567891` | Solo votante. Cédula antigua de 7 dígitos, mayor edad. |
+| `1000000000` | **No registrada** (no existe en el fixture). |
 - ⏳ El resto de archivos de código siguen con solo un comentario de propósito. Las instrucciones de ejecución del README están pendientes.

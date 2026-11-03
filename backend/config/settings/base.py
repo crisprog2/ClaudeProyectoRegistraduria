@@ -32,6 +32,7 @@ def env_lista(nombre):
 
 
 def env_bool(nombre, por_defecto=False):
+    """Lee una variable como booleano. Acepta 1, true, yes, si o sí (sin importar mayúsculas)."""
     return os.environ.get(nombre, str(por_defecto)).strip().lower() in ('1', 'true', 'yes', 'si', 'sí')
 
 

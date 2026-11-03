@@ -87,6 +87,10 @@ erDiagram
 | La edad nunca queda desactualizada | No se almacena: se calcula desde `fecha_nacimiento` (`calcular_edad(fecha_referencia)`) |
 | Los datos de referencia no se borran en cascada | Las relaciones usan `PROTECT`; solo la designación se elimina con su persona |
 
+### Datos de demostración
+
+El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) usa la **división política real** de Colombia (33 departamentos con códigos DIVIPOLA del DANE) y datos **inventados** para puestos, mesas y personas. Las cédulas siguen el formato colombiano, de 7 a 10 dígitos. Cada persona cubre un escenario de prueba: solo votante, jurado en la misma mesa, jurado en otra mesa del mismo puesto y jurado en otro puesto, además de casos borde (sin segundo nombre o apellido, nacimiento un 29 de febrero, cédulas antiguas).
+
 ## Estrategia de pruebas
 
 ```
@@ -113,7 +117,11 @@ erDiagram
 ├── .github/workflows/ci.yml   # Pipeline de CI (placeholder)
 ├── backend/                   # API Django + DRF
 │   ├── config/                # Proyecto Django y settings por entorno
-│   ├── apps/consultas/        # App de dominio: modelos, validadores, servicios, vistas
+│   ├── apps/consultas/        # App de dominio: modelos, admin, validadores, servicios, vistas
+│   │   ├── migrations/        # Migraciones de la base de datos
+│   │   └── fixtures/          # Datos de demostración (datos_demo.json)
+│   ├── manage.py
+│   ├── pytest.ini             # Configuración de pytest-django (settings de test)
 │   └── tests/                 # Pruebas white-box (pytest-django)
 ├── frontend/                  # React + Vite
 │   └── src/
@@ -133,12 +141,81 @@ erDiagram
 └── .env.example               # Variables de entorno requeridas
 ```
 
+## Estado del proyecto
+
+| Componente | Estado |
+|------------|--------|
+| Estructura del monorepo | ✅ |
+| Modelo de datos y migración inicial | ✅ |
+| Settings de Django por entorno (`local`, `test`) | ✅ |
+| Datos de demostración (fixture) | ✅ |
+| Admin de Django para revisar los datos | ✅ |
+| API REST de consulta (validadores, servicio, vista) | 🚧 Pendiente |
+| Frontend React | 🚧 Pendiente |
+| Pruebas unitarias, API, BDD y E2E | 🚧 Pendiente |
+| Pipeline de CI | 🚧 Placeholder |
+
 ## Ejecución
 
-🚧 **Pendiente.** Se documentará al completar la implementación:
+### Requisitos
 
-- Crear la base de datos y el usuario en MySQL 8.0
-- Ejecutar backend y frontend en local
+- Python 3.11 (Django 5.2 LTS; Django 6 exige Python 3.12+)
+- MySQL 8.0 en local
+- Windows / PowerShell en los ejemplos. En Linux o macOS el entorno se activa con `source .venv/bin/activate`.
+
+### 1. Entorno virtual y dependencias
+
+Un solo entorno en la raíz para el backend y las pruebas:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt -r tests/requirements.txt
+python -m playwright install        # navegadores para las pruebas E2E
+```
+
+### 2. Base de datos
+
+Con un usuario administrador de MySQL, crea la base y un usuario propio del proyecto. `test_registraduria` es la base temporal que pytest-django crea y borra en cada corrida de pruebas:
+
+```sql
+CREATE DATABASE registraduria CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'consultavoto_app'@'localhost' IDENTIFIED BY '<contraseña>';
+GRANT ALL PRIVILEGES ON registraduria.* TO 'consultavoto_app'@'localhost';
+GRANT ALL PRIVILEGES ON test_registraduria.* TO 'consultavoto_app'@'localhost';
+```
+
+### 3. Variables de entorno
+
+Copia la plantilla y completa los valores. El archivo `.env` nunca se sube al repositorio:
+
+```powershell
+Copy-Item .env.example .env
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+Obligatorias: `DJANGO_SECRET_KEY`, `MYSQL_DATABASE`, `MYSQL_USER` y `MYSQL_PASSWORD`. Las demás tienen valores por defecto para desarrollo local (ver comentarios en [`.env.example`](.env.example)).
+
+### 4. Migraciones, datos de demostración y superusuario
+
+```powershell
+cd backend
+python manage.py migrate
+python manage.py loaddata datos_demo
+python manage.py createsuperuser
+```
+
+### 5. Levantar el backend
+
+```powershell
+python manage.py runserver
+```
+
+Admin en http://127.0.0.1:8000/admin/: muestra departamentos, ciudades, puestos, mesas, personas (con filtro "es jurado") y designaciones de jurado.
+
+### Pendiente
+
+- Levantar el frontend
 - Correr cada suite de pruebas y generar reportes
 
 ## Aviso

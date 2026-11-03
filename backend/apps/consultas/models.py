@@ -1,3 +1,12 @@
+"""
+Modelo de datos de la consulta electoral.
+
+Jerarquía geográfica y electoral:
+    Departamento -> Ciudad -> PuestoVotacion -> Mesa -> Persona (donde vota)
+
+Una persona es jurado solo si tiene una DesignacionJurado, que apunta a su
+mesa de servicio (puede ser distinta a la mesa donde vota).
+"""
 from datetime import date
 
 from django.db import models
@@ -16,6 +25,7 @@ class Departamento(models.Model):
     nombre = models.CharField(max_length=255)
 
     def __str__(self):
+        """Ejemplo: 'Antioquia'."""
         return self.nombre
 
 
@@ -34,6 +44,7 @@ class Ciudad(models.Model):
     departamento = models.ForeignKey(Departamento, on_delete=models.PROTECT, db_column='cod_departamento', related_name='ciudades')
 
     def __str__(self):
+        """Ejemplo: 'Medellín'."""
         return self.nombre
 
 
@@ -58,6 +69,7 @@ class PuestoVotacion(models.Model):
         verbose_name_plural = 'puestos de votación'
 
     def __str__(self):
+        """Ejemplo: 'Colegio Cívico La Esperanza - Calle 48 # 65-20'."""
         return f"{self.nombre} - {self.direccion}"
 
 
@@ -81,7 +93,13 @@ class Mesa(models.Model):
         ]
 
     def __str__(self):
-        return f"Mesa {self.numero} ({self.cod_mesa})"
+        """
+        Ejemplo: 'Mesa 018 · Colegio Cívico La Esperanza'.
+
+        Lee el puesto relacionado: en listados usar select_related('puesto')
+        para no hacer una consulta por cada mesa.
+        """
+        return f"Mesa {self.numero:03d} · {self.puesto.nombre}"
 
 
 class Persona(models.Model):
@@ -103,6 +121,7 @@ class Persona(models.Model):
     """
 
     class Genero(models.TextChoices):
+        """Valores permitidos para el campo genero (se guarda la letra)."""
         FEMENINO = 'F', 'Femenino'
         MASCULINO = 'M', 'Masculino'
         OTRO = 'O', 'Otro'
@@ -117,16 +136,24 @@ class Persona(models.Model):
     mesa = models.ForeignKey(Mesa, on_delete=models.PROTECT, db_column='cod_mesa', related_name='votantes')
 
     def calcular_edad(self, fecha_referencia=None):
-        """Edad en años cumplidos a la fecha de referencia (hoy si no se indica)."""
+        """
+        Edad en años cumplidos a la fecha de referencia (hoy si no se indica).
+
+        Recibir la fecha como parámetro permite probar la regla con resultados
+        fijos, sin depender del día en que se ejecutan las pruebas. Una persona
+        nacida un 29 de febrero cumple años el 1 de marzo en años no bisiestos.
+        """
         fecha_referencia = fecha_referencia or date.today()
         cumplio_este_anio = (fecha_referencia.month, fecha_referencia.day) >= (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
         return fecha_referencia.year - self.fecha_nacimiento.year - (0 if cumplio_este_anio else 1)
 
     @property
     def edad(self):
+        """Edad actual en años cumplidos. No se guarda en la base de datos."""
         return self.calcular_edad()
 
     def __str__(self):
+        """Ejemplo: 'Carlos Martínez' (primer nombre y primer apellido)."""
         return f"{self.primer_nombre} {self.primer_apellido}"
 
 
@@ -146,6 +173,7 @@ class DesignacionJurado(models.Model):
     """
 
     class Rol(models.TextChoices):
+        """Roles posibles de un jurado de votación."""
         TITULAR = 'TITULAR', 'Jurado titular'
         REMANENTE = 'REMANENTE', 'Jurado remanente'
 
@@ -155,4 +183,10 @@ class DesignacionJurado(models.Model):
     rol = models.CharField(max_length=20, choices=Rol.choices)
 
     def __str__(self):
-        return f"{self.get_rol_display()} - Persona {self.persona_id} - Mesa {self.mesa_servicio_id}"
+        """
+        Ejemplo: 'Jurado titular · Carlos Martínez · Mesa 018 · Colegio Cívico La Esperanza'.
+
+        Lee la persona, la mesa y el puesto relacionados: en listados usar
+        select_related('persona', 'mesa_servicio__puesto').
+        """
+        return f"{self.get_rol_display()} · {self.persona} · {self.mesa_servicio}"

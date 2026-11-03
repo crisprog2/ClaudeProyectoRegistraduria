@@ -1,1 +1,903 @@
-[]
+[
+  {
+    "model": "consultas.departamento",
+    "pk": "05",
+    "fields": {
+      "nombre": "Antioquia"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "08",
+    "fields": {
+      "nombre": "Atlántico"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "11",
+    "fields": {
+      "nombre": "Bogotá, D.C."
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "13",
+    "fields": {
+      "nombre": "Bolívar"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "15",
+    "fields": {
+      "nombre": "Boyacá"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "17",
+    "fields": {
+      "nombre": "Caldas"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "18",
+    "fields": {
+      "nombre": "Caquetá"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "19",
+    "fields": {
+      "nombre": "Cauca"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "20",
+    "fields": {
+      "nombre": "Cesar"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "23",
+    "fields": {
+      "nombre": "Córdoba"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "25",
+    "fields": {
+      "nombre": "Cundinamarca"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "27",
+    "fields": {
+      "nombre": "Chocó"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "41",
+    "fields": {
+      "nombre": "Huila"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "44",
+    "fields": {
+      "nombre": "La Guajira"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "47",
+    "fields": {
+      "nombre": "Magdalena"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "50",
+    "fields": {
+      "nombre": "Meta"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "52",
+    "fields": {
+      "nombre": "Nariño"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "54",
+    "fields": {
+      "nombre": "Norte de Santander"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "63",
+    "fields": {
+      "nombre": "Quindío"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "66",
+    "fields": {
+      "nombre": "Risaralda"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "68",
+    "fields": {
+      "nombre": "Santander"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "70",
+    "fields": {
+      "nombre": "Sucre"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "73",
+    "fields": {
+      "nombre": "Tolima"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "76",
+    "fields": {
+      "nombre": "Valle del Cauca"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "81",
+    "fields": {
+      "nombre": "Arauca"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "85",
+    "fields": {
+      "nombre": "Casanare"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "86",
+    "fields": {
+      "nombre": "Putumayo"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "88",
+    "fields": {
+      "nombre": "Archipiélago de San Andrés, Providencia y Santa Catalina"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "91",
+    "fields": {
+      "nombre": "Amazonas"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "94",
+    "fields": {
+      "nombre": "Guainía"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "95",
+    "fields": {
+      "nombre": "Guaviare"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "97",
+    "fields": {
+      "nombre": "Vaupés"
+    }
+  },
+  {
+    "model": "consultas.departamento",
+    "pk": "99",
+    "fields": {
+      "nombre": "Vichada"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "05001",
+    "fields": {
+      "nombre": "Medellín",
+      "departamento": "05"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "05088",
+    "fields": {
+      "nombre": "Bello",
+      "departamento": "05"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "05266",
+    "fields": {
+      "nombre": "Envigado",
+      "departamento": "05"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "05360",
+    "fields": {
+      "nombre": "Itagüí",
+      "departamento": "05"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "08001",
+    "fields": {
+      "nombre": "Barranquilla",
+      "departamento": "08"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "11001",
+    "fields": {
+      "nombre": "Bogotá, D.C.",
+      "departamento": "11"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "13001",
+    "fields": {
+      "nombre": "Cartagena de Indias",
+      "departamento": "13"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "15001",
+    "fields": {
+      "nombre": "Tunja",
+      "departamento": "15"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "17001",
+    "fields": {
+      "nombre": "Manizales",
+      "departamento": "17"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "18001",
+    "fields": {
+      "nombre": "Florencia",
+      "departamento": "18"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "19001",
+    "fields": {
+      "nombre": "Popayán",
+      "departamento": "19"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "20001",
+    "fields": {
+      "nombre": "Valledupar",
+      "departamento": "20"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "23001",
+    "fields": {
+      "nombre": "Montería",
+      "departamento": "23"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "25754",
+    "fields": {
+      "nombre": "Soacha",
+      "departamento": "25"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "25899",
+    "fields": {
+      "nombre": "Zipaquirá",
+      "departamento": "25"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "27001",
+    "fields": {
+      "nombre": "Quibdó",
+      "departamento": "27"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "41001",
+    "fields": {
+      "nombre": "Neiva",
+      "departamento": "41"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "44001",
+    "fields": {
+      "nombre": "Riohacha",
+      "departamento": "44"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "47001",
+    "fields": {
+      "nombre": "Santa Marta",
+      "departamento": "47"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "50001",
+    "fields": {
+      "nombre": "Villavicencio",
+      "departamento": "50"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "52001",
+    "fields": {
+      "nombre": "Pasto",
+      "departamento": "52"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "54001",
+    "fields": {
+      "nombre": "Cúcuta",
+      "departamento": "54"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "63001",
+    "fields": {
+      "nombre": "Armenia",
+      "departamento": "63"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "66001",
+    "fields": {
+      "nombre": "Pereira",
+      "departamento": "66"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "68001",
+    "fields": {
+      "nombre": "Bucaramanga",
+      "departamento": "68"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "68276",
+    "fields": {
+      "nombre": "Floridablanca",
+      "departamento": "68"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "70001",
+    "fields": {
+      "nombre": "Sincelejo",
+      "departamento": "70"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "73001",
+    "fields": {
+      "nombre": "Ibagué",
+      "departamento": "73"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "76001",
+    "fields": {
+      "nombre": "Cali",
+      "departamento": "76"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "76520",
+    "fields": {
+      "nombre": "Palmira",
+      "departamento": "76"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "81001",
+    "fields": {
+      "nombre": "Arauca",
+      "departamento": "81"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "85001",
+    "fields": {
+      "nombre": "Yopal",
+      "departamento": "85"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "86001",
+    "fields": {
+      "nombre": "Mocoa",
+      "departamento": "86"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "88001",
+    "fields": {
+      "nombre": "San Andrés",
+      "departamento": "88"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "91001",
+    "fields": {
+      "nombre": "Leticia",
+      "departamento": "91"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "94001",
+    "fields": {
+      "nombre": "Inírida",
+      "departamento": "94"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "95001",
+    "fields": {
+      "nombre": "San José del Guaviare",
+      "departamento": "95"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "97001",
+    "fields": {
+      "nombre": "Mitú",
+      "departamento": "97"
+    }
+  },
+  {
+    "model": "consultas.ciudad",
+    "pk": "99001",
+    "fields": {
+      "nombre": "Puerto Carreño",
+      "departamento": "99"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "050010101",
+    "fields": {
+      "nombre": "Colegio Cívico La Esperanza",
+      "direccion": "Calle 48 # 65-20",
+      "ciudad": "05001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "050010102",
+    "fields": {
+      "nombre": "Institución Educativa Los Almendros",
+      "direccion": "Carrera 70 # 32-15",
+      "ciudad": "05001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "110010101",
+    "fields": {
+      "nombre": "Colegio Distrital Nuevo Horizonte",
+      "direccion": "Carrera 15 # 85-40",
+      "ciudad": "11001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "760010101",
+    "fields": {
+      "nombre": "Institución Educativa Río Claro",
+      "direccion": "Calle 5 # 38-12",
+      "ciudad": "76001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "080010101",
+    "fields": {
+      "nombre": "Escuela Normal Brisas del Mar",
+      "direccion": "Carrera 46 # 72-30",
+      "ciudad": "08001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "680010101",
+    "fields": {
+      "nombre": "Colegio Integrado Cañaveral",
+      "direccion": "Calle 36 # 27-50",
+      "ciudad": "68001"
+    }
+  },
+  {
+    "model": "consultas.puestovotacion",
+    "pk": "130010101",
+    "fields": {
+      "nombre": "Institución Educativa Puerta del Sol",
+      "direccion": "Avenida Pedro de Heredia # 31-18",
+      "ciudad": "13001"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 1,
+    "fields": {
+      "numero": 1,
+      "puesto": "050010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 2,
+    "fields": {
+      "numero": 17,
+      "puesto": "050010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 3,
+    "fields": {
+      "numero": 18,
+      "puesto": "050010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 4,
+    "fields": {
+      "numero": 19,
+      "puesto": "050010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 5,
+    "fields": {
+      "numero": 1,
+      "puesto": "050010102"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 6,
+    "fields": {
+      "numero": 5,
+      "puesto": "050010102"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 7,
+    "fields": {
+      "numero": 1,
+      "puesto": "110010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 8,
+    "fields": {
+      "numero": 2,
+      "puesto": "110010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 9,
+    "fields": {
+      "numero": 12,
+      "puesto": "110010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 10,
+    "fields": {
+      "numero": 3,
+      "puesto": "760010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 11,
+    "fields": {
+      "numero": 4,
+      "puesto": "760010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 12,
+    "fields": {
+      "numero": 7,
+      "puesto": "080010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 13,
+    "fields": {
+      "numero": 2,
+      "puesto": "680010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 14,
+    "fields": {
+      "numero": 9,
+      "puesto": "680010101"
+    }
+  },
+  {
+    "model": "consultas.mesa",
+    "pk": 15,
+    "fields": {
+      "numero": 1,
+      "puesto": "130010101"
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1098765432",
+    "fields": {
+      "primer_nombre": "Carlos",
+      "segundo_nombre": "Andrés",
+      "primer_apellido": "Martínez",
+      "segundo_apellido": "",
+      "genero": "M",
+      "fecha_nacimiento": "1990-03-14",
+      "mesa": 3
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1023456789",
+    "fields": {
+      "primer_nombre": "Laura",
+      "segundo_nombre": "Valentina",
+      "primer_apellido": "Gómez",
+      "segundo_apellido": "Rincón",
+      "genero": "F",
+      "fecha_nacimiento": "1998-07-22",
+      "mesa": 9
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1017234568",
+    "fields": {
+      "primer_nombre": "Juliana",
+      "segundo_nombre": "",
+      "primer_apellido": "Muñoz",
+      "segundo_apellido": "Restrepo",
+      "genero": "F",
+      "fecha_nacimiento": "1993-10-02",
+      "mesa": 2
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1036845120",
+    "fields": {
+      "primer_nombre": "Santiago",
+      "segundo_nombre": "",
+      "primer_apellido": "Peña",
+      "segundo_apellido": "Ospina",
+      "genero": "M",
+      "fecha_nacimiento": "1987-05-27",
+      "mesa": 1
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1144056789",
+    "fields": {
+      "primer_nombre": "Andrés",
+      "segundo_nombre": "Felipe",
+      "primer_apellido": "Lozano",
+      "segundo_apellido": "Viveros",
+      "genero": "M",
+      "fecha_nacimiento": "1995-12-09",
+      "mesa": 10
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1143987654",
+    "fields": {
+      "primer_nombre": "María",
+      "segundo_nombre": "José",
+      "primer_apellido": "Ortega",
+      "segundo_apellido": "Barrios",
+      "genero": "F",
+      "fecha_nacimiento": "2000-02-29",
+      "mesa": 12
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "79563214",
+    "fields": {
+      "primer_nombre": "Jorge",
+      "segundo_nombre": "Enrique",
+      "primer_apellido": "Rodríguez",
+      "segundo_apellido": "Salazar",
+      "genero": "M",
+      "fecha_nacimiento": "1962-11-05",
+      "mesa": 7
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "52748193",
+    "fields": {
+      "primer_nombre": "Martha",
+      "segundo_nombre": "Lucía",
+      "primer_apellido": "Suárez",
+      "segundo_apellido": "Pinzón",
+      "genero": "F",
+      "fecha_nacimiento": "1971-04-18",
+      "mesa": 8
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "1095827364",
+    "fields": {
+      "primer_nombre": "Alex",
+      "segundo_nombre": "",
+      "primer_apellido": "Ardila",
+      "segundo_apellido": "Cañas",
+      "genero": "O",
+      "fecha_nacimiento": "2008-01-15",
+      "mesa": 13
+    }
+  },
+  {
+    "model": "consultas.persona",
+    "pk": "4567891",
+    "fields": {
+      "primer_nombre": "Luis",
+      "segundo_nombre": "Alberto",
+      "primer_apellido": "Mendoza",
+      "segundo_apellido": "Herrera",
+      "genero": "M",
+      "fecha_nacimiento": "1948-08-30",
+      "mesa": 15
+    }
+  },
+  {
+    "model": "consultas.designacionjurado",
+    "pk": 1,
+    "fields": {
+      "persona": "1098765432",
+      "mesa_servicio": 3,
+      "rol": "TITULAR"
+    }
+  },
+  {
+    "model": "consultas.designacionjurado",
+    "pk": 2,
+    "fields": {
+      "persona": "1017234568",
+      "mesa_servicio": 4,
+      "rol": "REMANENTE"
+    }
+  },
+  {
+    "model": "consultas.designacionjurado",
+    "pk": 3,
+    "fields": {
+      "persona": "1036845120",
+      "mesa_servicio": 6,
+      "rol": "TITULAR"
+    }
+  },
+  {
+    "model": "consultas.designacionjurado",
+    "pk": 4,
+    "fields": {
+      "persona": "1143987654",
+      "mesa_servicio": 12,
+      "rol": "TITULAR"
+    }
+  },
+  {
+    "model": "consultas.designacionjurado",
+    "pk": 5,
+    "fields": {
+      "persona": "52748193",
+      "mesa_servicio": 9,
+      "rol": "REMANENTE"
+    }
+  }
+]
