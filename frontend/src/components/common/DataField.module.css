@@ -1,0 +1,19 @@
+.dato {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.etiqueta {
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+}
+
+.valor {
+  margin: 0;
+  color: var(--color-texto);
+  font-size: 15px;
+  line-height: 1.35;
+}

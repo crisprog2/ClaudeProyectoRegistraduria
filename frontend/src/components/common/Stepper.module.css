@@ -30,7 +30,7 @@
 
 .actual .indicador {
   background: var(--color-primario);
-  color: #ffffff;
+  color: var(--color-texto-invertido);
 }
 
 .completado .indicador {

@@ -1,0 +1,53 @@
+.bloque {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 15px 20px;
+  border-radius: var(--radio-medio);
+}
+
+.numero {
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 180px;
+}
+
+.titulo {
+  color: var(--color-azul-institucional);
+  font-size: 15px;
+}
+
+.detalle {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}
+
+.votacion {
+  background: var(--color-superficie-azul);
+}
+
+.votacion .numero {
+  color: var(--color-primario);
+  font-size: 44px;
+  letter-spacing: -1.7px;
+}
+
+.jurado {
+  padding: 13px 20px;
+  background: var(--color-superficie-aviso);
+}
+
+.jurado .numero {
+  color: var(--color-azul-institucional);
+  font-size: 36px;
+  letter-spacing: -1.2px;
+}

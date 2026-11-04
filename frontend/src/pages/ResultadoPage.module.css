@@ -1,5 +1,36 @@
+/* El Figma deja 36 px bajo el contenido; PageLayout pone 44 px (los de la consulta). */
 .pagina {
   display: flex;
   flex-direction: column;
+  gap: 24px;
+  margin-bottom: -8px;
+}
+
+.presentacion {
+  display: flex;
+  flex-direction: column;
   gap: 22px;
+}
+
+/* Columnas de 688 px y resto del ancho (488 px a 1200 px). */
+.columnas {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.columnaPrincipal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 688px;
+  max-width: 100%;
+}
+
+.columnaLateral {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }

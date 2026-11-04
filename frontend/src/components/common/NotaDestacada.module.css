@@ -1,0 +1,32 @@
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 20px;
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie-gris);
+}
+
+.nota img {
+  flex-shrink: 0;
+}
+
+.textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.texto {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+  line-height: 1.55;
+}

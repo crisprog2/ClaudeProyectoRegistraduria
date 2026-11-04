@@ -9,6 +9,7 @@
   --color-texto-secundario: #53677b;
   --color-texto-sobre-oscuro: #c3d2e2;
   --color-texto-sobre-oscuro-suave: #dce8f5;
+  --color-texto-invertido: #ffffff;
 
   /* Acción y estados */
   --color-primario: #1658c1;
@@ -30,9 +31,22 @@
   --color-borde: #dce4ed;
   --color-borde-campo: #9aabbe;
   --color-borde-error: #f0c9cc;
+  --color-borde-azul: #cddcf0;
 
   /* Texto de marcador de posición en los campos */
   --color-placeholder: #8a9bb0;
+
+  /* Ilustraciones: líneas del tarjetón y plano esquemático del mapa */
+  --color-tarjeton-linea: rgba(16, 46, 80, 0.31);
+  --color-mapa-fondo: #ecf0e8;
+  --color-mapa-manzana: #dfe5dd;
+  --color-mapa-parque: #cadfc5;
+  --color-mapa-predio: #d2e2fb;
+  --color-mapa-predio-borde: #9abbe7;
+  --color-mapa-edificio: #b2cbef;
+  --color-mapa-edificio-borde: #91b3e1;
+  --color-mapa-patio: #e7f0fd;
+  --color-mapa-texto: #677779;
 
   /* Tipografía */
   --fuente-base: 'Inter Variable', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;

@@ -1,0 +1,60 @@
+.aviso {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+  padding: 24px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-grande);
+  background: var(--color-superficie);
+}
+
+.icono {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radio-circulo);
+}
+
+.votante .icono {
+  background: var(--color-superficie-verde);
+}
+
+.jurado {
+  border-color: var(--color-borde-azul);
+  background: var(--color-superficie-azul);
+}
+
+.jurado .icono {
+  background: var(--color-superficie);
+}
+
+.textos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.condicion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.4px;
+}
+
+.detalle {
+  color: var(--color-texto-secundario);
+  font-size: 14px;
+  line-height: 1.5;
+}

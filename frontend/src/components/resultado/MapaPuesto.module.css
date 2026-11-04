@@ -1,0 +1,220 @@
+.tarjeta {
+  overflow: hidden;
+}
+
+.encabezado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px;
+}
+
+.titulo {
+  color: var(--color-texto);
+  font-size: 18px;
+  font-weight: 400;
+}
+
+.tipo {
+  margin-left: auto;
+  color: var(--color-texto-secundario);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Plano de 328 px de alto: todas las piezas usan las coordenadas del Figma. */
+.plano {
+  position: relative;
+  height: 328px;
+  overflow: hidden;
+  background: var(--color-mapa-fondo);
+}
+
+.plano > * {
+  position: absolute;
+}
+
+.manzana {
+  border-radius: 7px;
+  background: var(--color-mapa-manzana);
+}
+
+.via {
+  background: var(--color-superficie);
+}
+
+.calle {
+  left: 0;
+  width: 100%;
+  height: 20px;
+}
+
+.carrera {
+  top: 0;
+  width: 18px;
+  height: 328px;
+}
+
+.parque {
+  left: 16px;
+  top: 258px;
+  width: 66px;
+  height: 64px;
+  border-radius: 9px;
+  background: var(--color-mapa-parque);
+}
+
+.arbolChico { left: 27px; top: 270px; }
+.arbolGrande { left: 55px; top: 290px; }
+
+.predio {
+  left: 116px;
+  top: 129px;
+  width: 135px;
+  height: 95px;
+  border: 1px solid var(--color-mapa-predio-borde);
+  border-radius: 7px;
+  background: var(--color-mapa-predio);
+}
+
+.edificio {
+  left: 134px;
+  top: 154px;
+  width: 97px;
+  height: 50px;
+  border: 1px solid var(--color-mapa-edificio-borde);
+  border-radius: 4px;
+  background: var(--color-mapa-edificio);
+}
+
+.patio {
+  left: 159px;
+  top: 163px;
+  width: 47px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--color-mapa-patio);
+}
+
+.nombreCalle,
+.nombreCarrera {
+  color: var(--color-mapa-texto);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* left y top marcan el centro del texto girado. */
+.nombreCarrera {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.referencia {
+  left: 104px;
+  top: 42px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 250px;
+  padding: 10px 12px;
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie);
+  box-shadow: var(--sombra-flotante);
+}
+
+.referenciaPuesto {
+  color: var(--color-azul-institucional);
+  font-size: 12px;
+}
+
+.referenciaDireccion {
+  color: var(--color-texto-secundario);
+  font-size: 11px;
+}
+
+.areaMarcador { left: 155px; top: 166px; }
+.marcador { left: 152px; top: 117px; }
+.centroMarcador { left: 175px; top: 136px; }
+
+.norte {
+  left: 443px;
+  top: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 28px;
+  height: 47px;
+  padding: 5px;
+  border-radius: var(--radio-chico);
+  background: var(--color-superficie);
+  color: var(--color-azul-institucional);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.localidad {
+  left: 14px;
+  top: 291px;
+  padding: 7px 10px;
+  border-radius: var(--radio-chico);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font-size: 11px;
+}
+
+/* Pie: ubicación, nota opcional del jurado y aclaración */
+.pie {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 24px;
+}
+
+.ubicacion {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.ubicacion img,
+.nota img {
+  flex-shrink: 0;
+}
+
+.ubicacionTextos {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.ubicacionPuesto {
+  color: var(--color-texto);
+  font-size: 14px;
+}
+
+.ubicacionDireccion {
+  color: var(--color-texto-secundario);
+  font-size: 13px;
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie-azul);
+  color: var(--color-azul-institucional);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.aclaracion {
+  padding-top: 14px;
+  border-top: 1px solid var(--color-borde);
+  color: var(--color-texto-secundario);
+  font-size: 12px;
+  line-height: 1.5;
+}

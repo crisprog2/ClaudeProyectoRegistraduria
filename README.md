@@ -147,12 +147,14 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 │   ├── pytest.ini             # Configuración de pytest-django (settings de test)
 │   └── tests/                 # Pruebas white-box (pytest-django)
 ├── frontend/                  # React + Vite
+│   ├── vite.config.js         # Proxy de /api hacia el backend
 │   └── src/
-│       ├── pages/             # Una página por pantalla del diseño
-│       ├── components/        # layout/, common/, consulta/, resultado/
-│       ├── services/          # Cliente de la API
-│       ├── hooks/
-│       ├── utils/
+│       ├── pages/             # Una página por pantalla: consulta, resultado y 404
+│       ├── components/        # layout/, common/, consulta/, resultado/ (cada uno con su CSS Module)
+│       ├── services/          # Cliente de la API (único módulo que hace peticiones)
+│       ├── hooks/             # useConsultaCedula: valida, consulta y navega
+│       ├── utils/             # Validación, formatos, rutas y textos del jurado
+│       ├── assets/            # Íconos e ilustraciones del Figma
 │       └── styles/            # Tokens de diseño y estilos globales
 ├── tests/                     # Pruebas black-box contra la app en ejecución
 │   ├── data/                  # Datos de prueba (JSON)
@@ -179,7 +181,8 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Pruebas BDD (pytest-bdd, Gherkin en español, 14 casos contra la API) | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
-| Frontend React: pantalla de resultado | 🚧 En curso |
+| Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
+| Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | 🚧 Pendiente |
 | Pruebas BDD contra la interfaz y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 
@@ -290,6 +293,18 @@ npm run dev     # http://localhost:5173
 ```
 
 En desarrollo, Vite reenvía las peticiones a `/api` hacia el backend (`API_BASE_URL` del `.env`, por defecto `http://127.0.0.1:8000`), así que no hace falta configurar CORS.
+
+Cédulas de ejemplo para recorrer la aplicación (todas ficticias):
+
+| Cédula | Qué se ve |
+|--------|-----------|
+| `1023456789` | Solo votante, con su edad y el consejo "Antes de ir a votar" |
+| `1098765432` | Jurado en la misma mesa donde vota |
+| `1017234568` | Jurado remanente en otra mesa del mismo puesto |
+| `1036845120` | Jurado en otro puesto |
+| `1000000000` | Cédula no encontrada |
+
+El resultado viaja en el estado de navegación, nunca en la URL: si se recarga la página o se entra directo a `/consulta/resultado`, la aplicación vuelve a `/consulta`. Con el límite normal de 30 consultas por minuto, muchas pruebas seguidas muestran "Hiciste demasiadas consultas".
 
 ### Pendiente
 

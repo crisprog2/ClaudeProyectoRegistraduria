@@ -92,7 +92,7 @@
   width: 32px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(16, 46, 80, 0.31);
+  background: var(--color-tarjeton-linea);
 }
 
 .seleccion {
@@ -105,7 +105,7 @@
   width: 34px;
   height: 4px;
   border-radius: 2px;
-  background: rgba(16, 46, 80, 0.31);
+  background: var(--color-tarjeton-linea);
 }
 
 /* Textos */
@@ -136,7 +136,7 @@
 }
 
 .titulo {
-  color: #ffffff;
+  color: var(--color-texto-invertido);
   font-size: 25px;
   font-weight: 400;
   line-height: 1.2;

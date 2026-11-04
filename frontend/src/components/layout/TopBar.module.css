@@ -1,6 +1,6 @@
 .barra {
   background: var(--color-azul-institucional);
-  color: #ffffff;
+  color: var(--color-texto-invertido);
   font-size: 12px;
 }
 

@@ -33,7 +33,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
 
 ## Diseño (Figma)
 
-Figma: https://www.figma.com/design/olhIBoGbGoNDJ9LBxbxiqz/Proyecto-Registraduria (fileKey `olhIBoGbGoNDJ9LBxbxiqz`). Accesible con el servidor MCP de Figma (alcance user): **lectura y edición funcionan**. Antes de editar con `use_figma` cargar las guías `figma-use` y `figma-generate-design`. El archivo no tiene variables, estilos ni componentes: se reutilizan los valores de las pantallas existentes (Inter; textos `#142c43` / `#53677b`; bordes `#dce4ed` / `#9aabbe`; azul `#1658c1`; rojo `#c9454c`).
+Figma: https://www.figma.com/design/olhIBoGbGoNDJ9LBxbxiqz/Proyecto-Registraduria (fileKey `olhIBoGbGoNDJ9LBxbxiqz`). Accesible con el servidor MCP de Figma (alcance user): **lectura y edición funcionan**, pero el plan Starter tiene un límite de llamadas (ver "Estado"). Antes de editar con `use_figma` cargar las guías `figma-use` y `figma-generate-design`. El archivo no tiene variables, estilos ni componentes: se reutilizan los valores de las pantallas existentes (Inter; textos `#142c43` / `#53677b`; bordes `#dce4ed` / `#9aabbe`; azul `#1658c1`; rojo `#c9454c`).
 
 Frames (página `0:1`):
 - `6:2319` Consulta electoral · Inicio
@@ -53,6 +53,8 @@ Pantallas y componentes:
    - **Jurado:** `JuradoAlert` (badge JURADO), `AsignacionJuradoCard` y `ResponsabilidadesNota`.
 
 Layout común: `TopBar`, `SiteHeader`, `MainNav`, `FlagStripe`, `DemoBanner`, `Breadcrumb`, `Stepper`, `SiteFooter`.
+
+Bases compartidas agregadas al implementar (no son nodos del Figma): `AvisoCondicion` (`VotanteAlert` y `JuradoAlert`), `TarjetaMesa` (`LugarVotacionCard` y `AsignacionJuradoCard`) y `NotaDestacada` (`ConsejoVotacion` y `ResponsabilidadesNota`).
 
 ## Decisiones tomadas
 
@@ -153,6 +155,10 @@ Decisiones:
 - **Errores no diseñados en el Figma** (429 y servidor caído): reutilizan el panel de `ConsultaSinResultado` con su propio texto ("Hiciste demasiadas consultas" / "No pudimos completar la consulta").
 - **Estados de la consulta**: debajo del campo se muestra solo una cosa, en lugar de la ayuda: `FormError` (vacío o formato; borde rojo de 2 px, `aria-invalid`, foco al campo) o `ConsultaSinResultado` (no encontrada, 429, sin conexión; borde normal). Ambos con `role="alert"`. Al editar el campo el error desaparece. El campo tiene placeholder "Ej.: 1023456789".
 - **Colores de error** (de los frames de error del Figma): borde `#c9454c`, texto `#b3363d`, panel `#fbeeef` con borde `#f0c9cc`.
+- **Recarga**: el navegador conserva `history.state` al recargar, así que `main.jsx` lo borra al cargar la página. Sin esto, el resultado sobreviviría a la recarga.
+- **Textos del jurado** (`utils/textosJurado.js`): "misma mesa" es el texto del Figma; "otra mesa" y "otro puesto" no están en el Figma y los aprobó el usuario.
+- **Mapa de un jurado**: siempre muestra el lugar de votación; si sirve en otro puesto, la nota azul lo nombra. Los nombres de calles solo se muestran en `Calle 48 # 65-20` (Medellín), porque el dibujo corresponde a ese puesto; los demás usan el mismo plano sin nombres.
+- **Ciudad y departamento iguales** (Bogotá, D.C.): el mapa muestra el nombre una vez (`formatearLugar`); los campos de la tarjeta muestran ambos.
 - **Versiones exactas** en `package.json` (sin `^`) y `package-lock.json` versionado.
 - Las constantes de las rutas viven en `utils/rutas.js` para evitar una importación circular entre `routes.jsx` y las páginas.
 - "Cómo consultar" y "Ayuda" son `<a aria-disabled="true">` sin `href`: se ven como enlaces, pero no se pueden enfocar ni navegar.
@@ -193,8 +199,9 @@ Decisiones:
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
 - ✅ Frontend fase 1: dependencias con versiones exactas, Vite con proxy, router, tokens y layout común (TopBar, SiteHeader, MainNav, FlagStripe, DemoBanner, Breadcrumb, Stepper, PageHeading, SiteFooter). Capturas comparadas con el Figma.
 - ✅ Frontend fase 2: pantalla de consulta completa (`CedulaForm`, `PromoPanel`, `PasosConsulta`), validación en el cliente, `services/api.js`, hook `useConsultaCedula` y los 3 estados de error del Figma, más 429 y servidor caído. Verificado con Playwright: los errores del campo no llaman a la API, el foco vuelve al campo y la consulta exitosa navega sin la cédula en la URL.
-- ⏳ Siguiente: frontend fase 3 (pantalla de resultado: votante y jurado). Después, fase 4, steps de interfaz para los mismos features y E2E con Playwright.
-- ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. Para la fase 3 ya se tiene el diseño del votante (`6:2442`); el del jurado (`6:2609`) habrá que pedirlo cuando haya cupo o con capturas del usuario.
+- ✅ Frontend fase 3: pantalla de resultado para votante y jurado (misma mesa, otra mesa y otro puesto). Verificado con Playwright en los 10 ciudadanos del fixture; recarga y entrada directa vuelven a `/consulta`. El usuario la validó manualmente con el backend y el frontend corriendo. Aún no tiene pruebas automatizadas de interfaz.
+- ⏳ Siguiente: frontend fase 4 (accesibilidad, ajuste a pantallas pequeñas, 404 y documentación). Después, steps de interfaz para los mismos features y E2E con Playwright.
+- ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)
 
