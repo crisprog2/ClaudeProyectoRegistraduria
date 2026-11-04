@@ -14,6 +14,7 @@ import MapaPuesto from '../components/resultado/MapaPuesto.jsx';
 import ResponsabilidadesNota from '../components/resultado/ResponsabilidadesNota.jsx';
 import ResultadoDisclaimer from '../components/resultado/ResultadoDisclaimer.jsx';
 import VotanteAlert from '../components/resultado/VotanteAlert.jsx';
+import useTituloPagina from '../hooks/useTituloPagina.js';
 import { RUTA_CONSULTA } from '../utils/rutas.js';
 import { textosJurado } from '../utils/textosJurado.js';
 import estilos from './ResultadoPage.module.css';
@@ -25,6 +26,7 @@ import estilos from './ResultadoPage.module.css';
 export default function ResultadoPage() {
   const { state } = useLocation();
   const resultado = state?.resultado;
+  useTituloPagina('Tu información electoral');
 
   // La navegación del router conserva el desplazamiento: el resultado debe verse desde arriba.
   useEffect(() => {
@@ -50,6 +52,7 @@ export default function ResultadoPage() {
             ]}
           />
           <PageHeading
+            enfocar
             titulo="Tu información electoral"
             subtitulo="Revisa tu lugar de votación y si tienes una designación como jurado."
             extremo={<Stepper pasoActual={2} />}

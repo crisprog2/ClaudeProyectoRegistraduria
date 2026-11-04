@@ -12,3 +12,21 @@
   padding-top: 28px;
   padding-bottom: 44px;
 }
+
+/* Enlace para teclado: solo aparece al recibir el foco. */
+.saltar {
+  position: absolute;
+  left: 16px;
+  top: -60px;
+  z-index: 10;
+  padding: 10px 16px;
+  border-radius: var(--radio-medio);
+  background: var(--color-superficie);
+  color: var(--color-primario);
+  font-size: 14px;
+  box-shadow: var(--sombra-flotante);
+}
+
+.saltar:focus {
+  top: 8px;
+}

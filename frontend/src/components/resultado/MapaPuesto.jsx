@@ -12,8 +12,10 @@ import { formatearLugar, formatearMesa } from '../../utils/formatearUbicacion.js
 import Card from '../common/Card.jsx';
 import estilos from './MapaPuesto.module.css';
 
-// Posición de las manzanas en el plano del Figma: [izquierda, ancho].
-const COLUMNAS = [[12, 74], [116, 135], [280, 87], [397, 90]];
+// Posición de las manzanas: [izquierda, ancho]. Las cuatro primeras son las del Figma (486 px); las demás
+// solo se ven cuando la tarjeta se apila a todo el ancho, para que el plano no quede vacío a la derecha.
+const COLUMNAS = [[12, 74], [116, 135], [280, 87], [397, 90], [515, 135], [680, 87], [797, 135], [962, 90]];
+const CARRERAS = [92, 258, 373, 491, 656, 773, 938];
 // Posición de las filas: [arriba, alto].
 const FILAS = [[15, 84], [129, 95], [254, 80]];
 
@@ -43,9 +45,9 @@ export default function MapaPuesto({ lugar, mesaEnTitulo = false, nota }) {
         )))}
         <span className={`${estilos.via} ${estilos.calle}`} style={{ top: 103 }} />
         <span className={`${estilos.via} ${estilos.calle}`} style={{ top: 230 }} />
-        <span className={`${estilos.via} ${estilos.carrera}`} style={{ left: 92 }} />
-        <span className={`${estilos.via} ${estilos.carrera}`} style={{ left: 258 }} />
-        <span className={`${estilos.via} ${estilos.carrera}`} style={{ left: 373 }} />
+        {CARRERAS.map((izquierda) => (
+          <span key={izquierda} className={`${estilos.via} ${estilos.carrera}`} style={{ left: izquierda }} />
+        ))}
         <span className={estilos.parque} />
         <img className={estilos.arbolChico} src={arbolChico} alt="" width="14" height="14" />
         <img className={estilos.arbolGrande} src={arbolGrande} alt="" width="16" height="16" />

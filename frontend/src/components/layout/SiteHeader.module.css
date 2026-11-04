@@ -42,3 +42,13 @@
   color: var(--color-texto-secundario);
   font-size: 12px;
 }
+
+@media (max-width: 768px) {
+  .contenido {
+    flex-wrap: wrap;
+    gap: 14px 24px;
+    height: auto;
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+}

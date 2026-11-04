@@ -15,3 +15,10 @@
   display: flex;
   gap: 32px;
 }
+
+@media (max-width: 768px) {
+  .pasos {
+    flex-direction: column;
+    gap: 20px;
+  }
+}

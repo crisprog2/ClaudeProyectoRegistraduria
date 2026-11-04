@@ -16,3 +16,15 @@
   display: flex;
   gap: 24px;
 }
+
+@media (max-width: 480px) {
+  .contenido {
+    flex-wrap: wrap;
+    gap: 2px 16px;
+    height: auto;
+    min-height: 32px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    white-space: normal;
+  }
+}

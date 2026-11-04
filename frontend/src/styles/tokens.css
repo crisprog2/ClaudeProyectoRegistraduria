@@ -33,8 +33,8 @@
   --color-borde-error: #f0c9cc;
   --color-borde-azul: #cddcf0;
 
-  /* Texto de marcador de posición en los campos */
-  --color-placeholder: #8a9bb0;
+  /* Marcador de posición del campo. El Figma usa #8a9bb0 (2.8:1); se oscurece para cumplir 4.5:1 sobre blanco. */
+  --color-placeholder: #66778b;
 
   /* Ilustraciones: líneas del tarjetón y plano esquemático del mapa */
   --color-tarjeton-linea: rgba(16, 46, 80, 0.31);

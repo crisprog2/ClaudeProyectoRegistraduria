@@ -35,3 +35,19 @@
   align-items: center;
   gap: 7px;
 }
+
+@media (max-width: 768px) {
+  .secciones {
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+
+  .enlace {
+    font-size: 13px;
+  }
+
+  .activo {
+    gap: 6px;
+    padding-top: 0;
+  }
+}

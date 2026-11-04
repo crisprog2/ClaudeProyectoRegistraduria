@@ -60,3 +60,14 @@
 .accion:hover {
   background: var(--color-superficie-azul);
 }
+
+@media (max-width: 600px) {
+  .identificacion {
+    flex-wrap: wrap;
+  }
+
+  .accion {
+    justify-content: center;
+    width: 100%;
+  }
+}

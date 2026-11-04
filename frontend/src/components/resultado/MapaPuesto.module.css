@@ -135,8 +135,9 @@
 .marcador { left: 152px; top: 117px; }
 .centroMarcador { left: 175px; top: 136px; }
 
+/* Anclada a la derecha: con el ancho del Figma (486 px) queda en su posición de 443 px. */
 .norte {
-  left: 443px;
+  right: 15px;
   top: 15px;
   display: flex;
   flex-direction: column;
@@ -217,4 +218,19 @@
   color: var(--color-texto-secundario);
   font-size: 12px;
   line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .encabezado {
+    padding: 16px;
+  }
+
+  .pie {
+    padding: 16px;
+  }
+
+  .referencia {
+    left: 12px;
+    width: min(250px, calc(100% - 60px));
+  }
 }

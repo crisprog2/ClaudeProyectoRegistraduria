@@ -5,12 +5,12 @@ import { RUTA_CONSULTA } from '../../utils/rutas.js';
 import MainNav from './MainNav.jsx';
 import estilos from './SiteHeader.module.css';
 
-/** Header blanco de 96 px: marca a la izquierda (enlaza al inicio) y MainNav a la derecha. */
+/** Franja blanca de 96 px dentro del <header> de PageLayout: marca a la izquierda (enlaza al inicio) y MainNav a la derecha. */
 export default function SiteHeader() {
   return (
-    <header className={estilos.header}>
+    <div className={estilos.header}>
       <div className={`contenedor ${estilos.contenido}`}>
-        <Link to={RUTA_CONSULTA} className={estilos.marca} aria-label="ConsultaVoto, ir al inicio">
+        <Link to={RUTA_CONSULTA} className={estilos.marca}>
           <span className={estilos.emblema}>
             <img src={emblema} alt="" width="28" height="28" />
           </span>
@@ -21,6 +21,6 @@ export default function SiteHeader() {
         </Link>
         <MainNav />
       </div>
-    </header>
+    </div>
   );
 }

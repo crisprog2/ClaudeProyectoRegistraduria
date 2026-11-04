@@ -182,7 +182,7 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
-| Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | 🚧 Pendiente |
+| Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas BDD contra la interfaz y E2E | 🚧 Pendiente |
 | Pipeline de CI | 🚧 Placeholder |
 

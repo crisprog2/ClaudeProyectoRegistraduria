@@ -159,6 +159,10 @@ Decisiones:
 - **Textos del jurado** (`utils/textosJurado.js`): "misma mesa" es el texto del Figma; "otra mesa" y "otro puesto" no están en el Figma y los aprobó el usuario.
 - **Mapa de un jurado**: siempre muestra el lugar de votación; si sirve en otro puesto, la nota azul lo nombra. Los nombres de calles solo se muestran en `Calle 48 # 65-20` (Medellín), porque el dibujo corresponde a ese puesto; los demás usan el mismo plano sin nombres.
 - **Ciudad y departamento iguales** (Bogotá, D.C.): el mapa muestra el nombre una vez (`formatearLugar`); los campos de la tarjeta muestran ambos.
+- **Pantallas pequeñas**: el Figma solo diseña 1440 px, así que este comportamiento es criterio propio. A 1100 px o menos las columnas se apilan; a 768 px el header y los pasos se reorganizan; a 600 y 480 px se reducen títulos y rellenos. Sin desborde horizontal de 1440 a 320 px. El plano del mapa tiene manzanas adicionales que solo se ven a todo el ancho, y la brújula está anclada a la derecha.
+- **Accesibilidad**: enlace "Saltar al contenido" (mueve el foco a mano, porque un cambio de hash borraría el estado de navegación), título de pestaña por pantalla (`useTituloPagina`) y foco en el `h1` al cambiar de pantalla (`PageHeading enfocar`). Auditado con axe-core (WCAG 2.1 A/AA y buenas prácticas): 0 violaciones en las 8 pantallas revisadas. axe no está instalado en el repositorio y se ejecutó solo una vez.
+- **Placeholder**: `#66778b` (4.59:1) en lugar del `#8a9bb0` del Figma (2.84:1), que no cumple WCAG AA. axe no evalúa el contraste de los placeholders.
+- **Página 404**: no está en el Figma; reutiliza el layout, `PageHeading` y `Card`.
 - **Versiones exactas** en `package.json` (sin `^`) y `package-lock.json` versionado.
 - Las constantes de las rutas viven en `utils/rutas.js` para evitar una importación circular entre `routes.jsx` y las páginas.
 - "Cómo consultar" y "Ayuda" son `<a aria-disabled="true">` sin `href`: se ven como enlaces, pero no se pueden enfocar ni navegar.
@@ -200,7 +204,8 @@ Decisiones:
 - ✅ Frontend fase 1: dependencias con versiones exactas, Vite con proxy, router, tokens y layout común (TopBar, SiteHeader, MainNav, FlagStripe, DemoBanner, Breadcrumb, Stepper, PageHeading, SiteFooter). Capturas comparadas con el Figma.
 - ✅ Frontend fase 2: pantalla de consulta completa (`CedulaForm`, `PromoPanel`, `PasosConsulta`), validación en el cliente, `services/api.js`, hook `useConsultaCedula` y los 3 estados de error del Figma, más 429 y servidor caído. Verificado con Playwright: los errores del campo no llaman a la API, el foco vuelve al campo y la consulta exitosa navega sin la cédula en la URL.
 - ✅ Frontend fase 3: pantalla de resultado para votante y jurado (misma mesa, otra mesa y otro puesto). Verificado con Playwright en los 10 ciudadanos del fixture; recarga y entrada directa vuelven a `/consulta`. El usuario la validó manualmente con el backend y el frontend corriendo. Aún no tiene pruebas automatizadas de interfaz.
-- ⏳ Siguiente: frontend fase 4 (accesibilidad, ajuste a pantallas pequeñas, 404 y documentación). Después, steps de interfaz para los mismos features y E2E con Playwright.
+- ✅ Frontend fase 4: accesibilidad (0 violaciones de axe), ajuste a pantallas pequeñas de 1440 a 320 px y página 404.
+- ⏳ Siguiente: steps de interfaz para los mismos features BDD y E2E con Playwright. Después, el pipeline de CI.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)

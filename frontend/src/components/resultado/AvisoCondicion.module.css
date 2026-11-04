@@ -58,3 +58,15 @@
   font-size: 14px;
   line-height: 1.5;
 }
+
+@media (max-width: 480px) {
+  .aviso {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .titulo {
+    font-size: 18px;
+  }
+}

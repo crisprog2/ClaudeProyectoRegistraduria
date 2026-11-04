@@ -70,3 +70,31 @@
 .seccion .subtitulo {
   font-size: 16px;
 }
+
+@media (max-width: 600px) {
+  .portada .titulo {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+
+  .portada .subtitulo {
+    font-size: 15px;
+  }
+
+  .portada .extremo {
+    padding-top: 0;
+  }
+
+  .seccion {
+    align-items: flex-start;
+  }
+
+  .seccion .titulo {
+    font-size: 28px;
+  }
+
+  .seccion .subtitulo {
+    font-size: 14px;
+    line-height: 1.4;
+  }
+}

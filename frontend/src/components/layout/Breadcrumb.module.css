@@ -24,3 +24,9 @@
 .actual {
   color: var(--color-texto);
 }
+
+@media (max-width: 480px) {
+  .ruta {
+    flex-wrap: wrap;
+  }
+}

@@ -51,3 +51,24 @@
   font-size: 36px;
   letter-spacing: -1.2px;
 }
+
+@media (max-width: 480px) {
+  .bloque,
+  .jurado {
+    padding: 14px;
+  }
+
+  .votacion .numero {
+    font-size: 34px;
+    letter-spacing: -1.2px;
+  }
+
+  .jurado .numero {
+    font-size: 30px;
+    letter-spacing: -1px;
+  }
+
+  .textos {
+    min-width: 100%;
+  }
+}
