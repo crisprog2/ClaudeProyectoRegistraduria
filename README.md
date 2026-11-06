@@ -16,6 +16,7 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 | Capa | Tecnología |
 |------|------------|
 | Backend | Python 3.11, Django 5.2 LTS, Django REST Framework |
+| Documentación de la API | OpenAPI 3.1 y Swagger UI (drf-spectacular) |
 | Base de datos | MySQL 8.0 |
 | Frontend | React + Vite |
 | Pruebas unitarias / integración | pytest + pytest-django |
@@ -93,6 +94,8 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 
 ## API
 
+Con el backend corriendo, la documentación interactiva está en http://127.0.0.1:8000/api/docs/ (Swagger UI). La especificación OpenAPI está en http://127.0.0.1:8000/api/schema/ y se puede importar en Postman.
+
 `POST /api/consulta/` con `{"cedula": "1098765432"}`. La cédula va en el cuerpo y no en la URL, para que no quede registrada en logs ni historiales.
 
 ```json
@@ -131,6 +134,7 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 - **Page Object Model** compartido entre E2E y BDD (`tests/support/pages/`), con localizadores por rol y nombre accesible.
 - **Los mismos features BDD** se ejecutan por dos canales: la API y la interfaz.
 - **Accesibilidad automatizada** con axe-core (WCAG 2.1 A/AA) en cada pantalla.
+- **La documentación de la API se prueba**: las respuestas reales se validan contra la especificación OpenAPI, así que los campos no documentados y los ejemplos desactualizados hacen fallar la suite.
 - **Pruebas de mutación**: las reglas de negocio y de seguridad se comprobaron reintroduciendo el defecto.
 - **`conftest.py` por nivel** para aislar fixtures.
 - **Datos de prueba externos** en `tests/data/`, nunca quemados en los tests.
@@ -143,7 +147,7 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 ├── .github/workflows/ci.yml   # Pipeline de CI (placeholder)
 ├── backend/                   # API Django + DRF
 │   ├── config/                # Proyecto Django y settings por entorno
-│   ├── apps/consultas/        # App de dominio: modelos, admin, validadores, servicios, vistas
+│   ├── apps/consultas/        # App de dominio: modelos, admin, validadores, servicios, vistas, documentación OpenAPI
 │   │   ├── migrations/        # Migraciones de la base de datos
 │   │   └── fixtures/          # Datos de demostración (datos_demo.json)
 │   ├── manage.py
@@ -162,9 +166,9 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 ├── tests/                     # Pruebas black-box contra la app en ejecución
 │   ├── data/                  # Datos de prueba (JSON)
 │   ├── support/               # Cliente de API, configuración y Page Objects
-│   ├── api/                   # Pruebas de API
+│   ├── api/                   # Pruebas de API y de su documentación
 │   ├── bdd/                   # features/ (Gherkin) + step_defs/api y step_defs/interfaz
-│   └── e2e/                   # Flujo, errores, accesibilidad y pantallas pequeñas con Playwright
+│   └── e2e/                   # Flujo, errores, accesibilidad, pantallas pequeñas y Swagger UI con Playwright
 ├── pytest.ini                 # Configuración y markers de las pruebas black-box
 └── .env.example               # Variables de entorno requeridas
 ```
@@ -179,14 +183,15 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | Datos de demostración (fixture) | ✅ |
 | Admin de Django para revisar los datos | ✅ |
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
-| Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
-| Pruebas black-box de la API (pytest + requests, 59 pruebas) | ✅ |
+| Documentación de la API con Swagger UI y OpenAPI 3.1 | ✅ |
+| Pruebas white-box del backend (pytest-django, 96 pruebas) | ✅ |
+| Pruebas black-box de la API y su documentación (pytest + requests, 110 pruebas) | ✅ |
 | Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
-| Pruebas E2E (Playwright, 112 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
+| Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -247,6 +252,8 @@ python manage.py runserver
 
 Admin en http://127.0.0.1:8000/admin/: muestra departamentos, ciudades, puestos, mesas, personas (con filtro "es jurado") y designaciones de jurado.
 
+Swagger UI en http://127.0.0.1:8000/api/docs/: abre `POST /api/consulta/`, pulsa **Try it out**, elige un ejemplo y pulsa **Execute**. Cada ejecución cuenta para el límite de consultas. Sus archivos los sirve el backend, así que no funciona desde el puerto del frontend ni con `DJANGO_DEBUG=false`, porque en ese modo Django no sirve archivos estáticos.
+
 Probar la API desde PowerShell (con el servidor corriendo):
 
 ```powershell
@@ -294,9 +301,9 @@ pytest tests -m smoke                # subconjunto crítico de todas las suites
 
 | Suite | Casos | Qué cubre |
 |-------|-------|-----------|
-| `tests/api` | 59 | Contrato de la API, validaciones y protocolo HTTP |
+| `tests/api` | 110 | Contrato de la API, validaciones, protocolo HTTP y coincidencia con la documentación OpenAPI |
 | `tests/bdd` | 28 | 14 escenarios de negocio, por la API y por la interfaz |
-| `tests/e2e` | 112 | Navegación, privacidad, formato, errores, fallas de red, accesibilidad y pantallas pequeñas |
+| `tests/e2e` | 114 | Navegación, privacidad, formato, errores, fallas de red, accesibilidad, pantallas pequeñas y Swagger UI |
 
 Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos de prueba en [`tests/data/`](tests/data). Las URL se toman de `API_BASE_URL` y `FRONTEND_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000` y `http://localhost:5173`). Si falta algún servidor, la corrida se detiene con instrucciones.
 

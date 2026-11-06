@@ -6,6 +6,10 @@ django-cors-headers==4.9.0
 mysqlclient==2.3.0
 python-dotenv==1.2.4
 
+# Documentación de la API: OpenAPI y Swagger UI servido desde el proyecto
+drf-spectacular==0.30.0
+drf-spectacular-sidecar==2026.10.1
+
 # Pruebas white-box del backend
 pytest==9.2.0
 pytest-django==4.14.0

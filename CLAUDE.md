@@ -21,6 +21,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
 ## Stack
 
 - **Backend**: Python 3.11 + Django 5.2 LTS + Django REST Framework + MySQL 8.0. No subir a Django 6: exige Python 3.12+.
+- **Documentación de la API**: drf-spectacular (OpenAPI 3.1) y Swagger UI servido desde el proyecto con drf-spectacular-sidecar.
 - **Entorno**: un solo entorno virtual en la raíz (`.venv/`) para backend y pruebas. Versiones fijadas con `==` en `backend/requirements.txt` y `tests/requirements.txt`. Navegadores de Playwright (Chromium, Firefox, WebKit) instalados fuera del repo.
 - **Base de datos**: servidor MySQL 8.0 **local** del usuario (servicio de Windows, puerto 3306). No se usa Docker. En CI se usa el contenedor `mysql:8.0` como servicio de GitHub Actions para mantener la misma versión mayor.
 - **Frontend**: React + Vite + react-router-dom.
@@ -118,16 +119,23 @@ Los mensajes son los textos del Figma. Seguridad: `NUM_PROXIES = 0` hace que el 
 
 Límite configurable: `CONSULTA_LIMITE_POR_MINUTO` (entero > 0; vacío = 30). La suite black-box levanta el servidor con un valor alto (1000) porque hace ~60 peticiones seguidas. `settings/test.py` lo fija en 30 para que las pruebas del 429 no dependan del `.env`. El 429 solo se prueba en white-box.
 
-Pruebas white-box (`backend/tests/`, 77): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL") y `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+Documentación: `/api/docs/` (Swagger UI) y `/api/schema/` (OpenAPI; YAML por defecto, JSON con `?format=json`).
+- `apps/consultas/esquema.py` describe el endpoint con `@documentar_consulta`: ejemplos, códigos HTTP y cabeceras. Toma los mensajes de `validators.py`, `services.py` y `exceptions.py` para no repetirlos. Sus serializadores `SolicitudConsultaSerializer` y `ErrorSerializer` solo documentan.
+- La respuesta sale de los serializadores reales: `JuradoSerializer` declara sus campos, sin `to_representation`, para que el esquema los vea.
+- Los docstrings de los serializadores se publican en Swagger: las notas internas van en comentarios.
+- Está siempre activa porque la API ya es abierta y los datos son ficticios; revisarlo si se despliega en un servidor público. Con `DEBUG=False` la página responde, pero Django no sirve sus archivos estáticos y se ve en blanco: un despliegue necesitaría `collectstatic` y un servidor de estáticos.
 
-Pruebas black-box de la API (`tests/api/`, 59, marker `api`; 14 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
+Pruebas white-box (`backend/tests/`, 96): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool`). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+
+Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
 - `test_consulta_cedula.py`: respuesta exacta de los 10 ciudadanos del fixture, reglas de los escenarios mínimos (misma mesa, otra mesa del mismo puesto, otro puesto, solo votante), espacios externos, contrato de claves y que no se expongan datos sensibles.
 - `test_validaciones_cedula.py`: 19 casos de cédula requerida, formato inválido y no encontrada, con código y mensaje exactos.
 - `test_protocolo_http.py`: 405 (con cabecera `Allow`), 415 y JSON que no es objeto.
+- `test_documentacion_api.py`: las respuestas reales de todos los casos de `tests/data/` cumplen la especificación, y los ejemplos documentados coinciden con lo que responde la API. `support/openapi.py` marca cada objeto con `additionalProperties: false`, porque OpenAPI admite campos no documentados por defecto. El 429 se comprueba en white-box. Los archivos estáticos de Swagger exigen un servidor con `DEBUG` activo.
 - Soporte en `tests/support/`: `config.py` (`API_BASE_URL` del `.env`), `api_client.py` (`ConsultaApiClient`), `data_loader.py` (`cargar`, `caso`, `como_parametros`: el campo `"smoke": true` de un caso agrega el marker) y `edad.py` (oráculo de edad independiente del backend, con la fecha de America/Bogota).
 - Datos en `tests/data/`: `ciudadanos.json`, `cedulas_invalidas.json`, `solicitudes_invalidas.json`, `mensajes_error.json` y `contrato_consulta.json`.
 - `pytest.ini` de la raíz agrega `pythonpath = tests` (imports `support.*`). Si no hay servidor, el fixture `api` detiene la corrida con instrucciones.
-- Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite.
+- Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite. También se detectan en la documentación: campo sin documentar, tipo distinto del real, código o ejemplo faltante, ejemplo desactualizado, mensaje cambiado, Swagger desde un CDN, nombre de la entidad real, sin aviso de datos ficticios y sin `Retry-After`.
 - El fixture `api` (cliente compartido por API y BDD) está en `tests/conftest.py`. Si no hay servidor, detiene la corrida con instrucciones.
 
 Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 casos por canal, 6 también `@smoke`): 3 features en lenguaje de negocio, sin HTTP ni pantallas. Los mismos features se ejecutan por dos canales: `step_defs/api/` (marker `api`) y `step_defs/interfaz/` (marker `e2e`). Cada carpeta tiene su `conftest.py` y su `common_steps.py`, porque los textos de los steps son iguales y sus implementaciones no deben mezclarse.
@@ -140,11 +148,12 @@ Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 casos por canal, 6 también `@smoke`):
 - Los casos de protocolo (405, 415, JSON mal formado) no van en Gherkin: solo en `tests/api/`.
 - Mutación verificada: si el serializer omite la designación fallan los 3 escenarios de jurado; si se acepta el 0 inicial falla su ejemplo.
 
-Pruebas E2E (`tests/e2e/`, 112 casos, marker `e2e`): Playwright contra el backend y el frontend en marcha, en Chromium, Firefox y WebKit. Cubren lo que los features no describen.
+Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backend y el frontend en marcha, en Chromium, Firefox y WebKit. Cubren lo que los features no describen.
 - `test_flujo_consulta.py`: formato de cédula y mesa, edad solo para el votante, textos de los 3 casos de jurado, mapa, la cédula nunca en la URL, recarga y entrada directa, 404, avisos obligatorios y ninguna mención de entidades reales.
 - `test_casos_error.py`: errores del campo (que no llaman a la API), no encontrada y, simulados interceptando la petición con `page.route`, 429, conexión caída y error 500.
 - `test_accesibilidad.py`: axe-core (`axe-playwright-python`, WCAG 2.1 A/AA y buenas prácticas) en las 8 pantallas, títulos de pestaña, foco al navegar y "Saltar al contenido".
 - `test_pantallas_pequenas.py`: sin desborde horizontal en 8 pantallas a 1440, 1024, 768, 390 y 320 px.
+- `test_swagger_ui.py`: Swagger UI carga sin pedir nada a servicios externos y "Try it out" ejecuta una consulta real.
 - Page Objects en `tests/support/pages/`: localizan por rol y nombre accesible y exponen localizadores para usarlos con `expect`. Las fixtures `consulta` y `resultado` están en `tests/conftest.py`.
 - Datos en `tests/data/textos_interfaz.json` y `tests/data/pantallas.json`. La fixture `abrir_pantalla` deja la página en cualquier pantalla de esa lista.
 - `base_url` y la ventana de 1440x900 están en `tests/conftest.py`. La fixture `aplicacion_levantada` detiene la corrida con instrucciones si falta un servidor. El navegador se elige con `--browser` y `--headed` (no hay variables `BROWSER` ni `HEADLESS`).
@@ -209,17 +218,18 @@ Decisiones:
 - ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
-- ✅ Pruebas white-box del backend: 77 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
+- ✅ Pruebas white-box del backend: 96 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
-- ✅ Pruebas black-box de la API: 59 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
+- ✅ Pruebas black-box de la API: 110 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
 - ✅ Frontend fase 1: dependencias con versiones exactas, Vite con proxy, router, tokens y layout común (TopBar, SiteHeader, MainNav, FlagStripe, DemoBanner, Breadcrumb, Stepper, PageHeading, SiteFooter). Capturas comparadas con el Figma.
 - ✅ Frontend fase 2: pantalla de consulta completa (`CedulaForm`, `PromoPanel`, `PasosConsulta`), validación en el cliente, `services/api.js`, hook `useConsultaCedula` y los 3 estados de error del Figma, más 429 y servidor caído. Verificado con Playwright: los errores del campo no llaman a la API, el foco vuelve al campo y la consulta exitosa navega sin la cédula en la URL.
 - ✅ Frontend fase 3: pantalla de resultado para votante y jurado (misma mesa, otra mesa y otro puesto). Verificado con Playwright en los 10 ciudadanos del fixture; recarga y entrada directa vuelven a `/consulta`. El usuario la validó manualmente con el backend y el frontend corriendo. Aún no tiene pruebas automatizadas de interfaz.
 - ✅ Frontend fase 4: accesibilidad (0 violaciones de axe), ajuste a pantallas pequeñas de 1440 a 320 px y página 404.
-- ✅ Pruebas de interfaz: 14 casos BDD y 112 E2E pasan en Chromium, Firefox y WebKit; mutaciones detectadas.
+- ✅ Pruebas de interfaz: 14 casos BDD y 112 E2E pasan en Chromium, Firefox y WebKit; mutaciones detectadas. Los 2 E2E de Swagger UI también pasan en los tres navegadores.
 - ✅ Todo el código documentado (backend, pruebas y frontend).
-- ⏳ Siguiente: pipeline de CI en GitHub Actions y reportes de pruebas. El marker `regression` está declarado, pero todavía no se usa.
+- ✅ Swagger UI y OpenAPI 3.1 en la rama `feature/swagger`. `env_bool` ya usa el valor por defecto cuando la variable está vacía (antes, un `DJANGO_DEBUG=` vacío apagaba `DEBUG` y dejaba sin estilos al admin).
+- ⏳ Siguiente: pipeline de CI en GitHub Actions y reportes de pruebas. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)
