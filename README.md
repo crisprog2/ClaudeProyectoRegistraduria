@@ -128,7 +128,10 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
             └───────────┘
 ```
 
-- **Page Object Model** compartido entre E2E y BDD (`tests/support/pages/`).
+- **Page Object Model** compartido entre E2E y BDD (`tests/support/pages/`), con localizadores por rol y nombre accesible.
+- **Los mismos features BDD** se ejecutan por dos canales: la API y la interfaz.
+- **Accesibilidad automatizada** con axe-core (WCAG 2.1 A/AA) en cada pantalla.
+- **Pruebas de mutación**: las reglas de negocio y de seguridad se comprobaron reintroduciendo el defecto.
 - **`conftest.py` por nivel** para aislar fixtures.
 - **Datos de prueba externos** en `tests/data/`, nunca quemados en los tests.
 - **Markers** (`api`, `bdd`, `e2e`, `smoke`, `regression`) para ejecutar suites selectivas.
@@ -160,8 +163,8 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 │   ├── data/                  # Datos de prueba (JSON)
 │   ├── support/               # Cliente de API, configuración y Page Objects
 │   ├── api/                   # Pruebas de API
-│   ├── bdd/                   # features/ (Gherkin) + step_defs/
-│   └── e2e/                   # Pruebas de UI con Playwright
+│   ├── bdd/                   # features/ (Gherkin) + step_defs/api y step_defs/interfaz
+│   └── e2e/                   # Flujo, errores, accesibilidad y pantallas pequeñas con Playwright
 ├── pytest.ini                 # Configuración y markers de las pruebas black-box
 └── .env.example               # Variables de entorno requeridas
 ```
@@ -178,12 +181,12 @@ El fixture [`datos_demo.json`](backend/apps/consultas/fixtures/datos_demo.json) 
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Pruebas white-box del backend (pytest-django, 77 pruebas) | ✅ |
 | Pruebas black-box de la API (pytest + requests, 59 pruebas) | ✅ |
-| Pruebas BDD (pytest-bdd, Gherkin en español, 14 casos contra la API) | ✅ |
+| Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
-| Pruebas BDD contra la interfaz y E2E | 🚧 Pendiente |
+| Pruebas E2E (Playwright, 112 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -260,9 +263,9 @@ pytest
 
 pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar.
 
-### 7. Pruebas black-box de la API y BDD
+### 7. Pruebas black-box: API, BDD y E2E
 
-Se ejecutan contra el servidor en marcha y con los datos de demostración cargados. La suite hace unas 60 peticiones seguidas, así que el servidor se levanta con un límite de consultas alto. En una terminal:
+Se ejecutan contra la aplicación en marcha y con los datos de demostración cargados. Hacen muchas peticiones seguidas, así que el backend se levanta con un límite de consultas alto. En una terminal:
 
 ```powershell
 $env:CONSULTA_LIMITE_POR_MINUTO = "1000"
@@ -270,17 +273,34 @@ cd backend
 python manage.py runserver
 ```
 
-En otra terminal, desde la raíz del repositorio:
+Las pruebas de interfaz también necesitan el frontend. En otra terminal (ver el paso 8):
 
 ```powershell
-pytest tests/api            # pruebas de la API
-pytest tests/bdd            # escenarios de negocio en Gherkin
-pytest tests/api tests/bdd -m smoke   # subconjunto crítico de ambas
+cd frontend
+npm run dev
 ```
 
-Los escenarios BDD están en [`tests/bdd/features/`](tests/bdd/features). Están escritos en lenguaje de negocio, así que cuando exista el frontend se ejecutarán también contra la interfaz.
+En una tercera terminal, desde la raíz del repositorio:
 
-La URL de la API se toma de `API_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000`). Si el servidor no está levantado, la corrida se detiene con instrucciones. Los casos y las respuestas esperadas están en [`tests/data/`](tests/data).
+```powershell
+pytest tests/api                     # API (no necesita el frontend)
+pytest tests/bdd -m "bdd and api"    # escenarios BDD contra la API
+pytest tests/bdd -m "bdd and e2e"    # escenarios BDD contra la interfaz
+pytest tests/e2e                     # E2E en Chromium
+pytest tests/e2e --headed            # E2E viendo el navegador
+pytest tests/bdd tests/e2e -m e2e --browser chromium --browser firefox --browser webkit
+pytest tests -m smoke                # subconjunto crítico de todas las suites
+```
+
+| Suite | Casos | Qué cubre |
+|-------|-------|-----------|
+| `tests/api` | 59 | Contrato de la API, validaciones y protocolo HTTP |
+| `tests/bdd` | 28 | 14 escenarios de negocio, por la API y por la interfaz |
+| `tests/e2e` | 112 | Navegación, privacidad, formato, errores, fallas de red, accesibilidad y pantallas pequeñas |
+
+Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos de prueba en [`tests/data/`](tests/data). Las URL se toman de `API_BASE_URL` y `FRONTEND_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000` y `http://localhost:5173`). Si falta algún servidor, la corrida se detiene con instrucciones.
+
+La auditoría con axe-core detecta solo una parte de los problemas de accesibilidad: no reemplaza una revisión con lector de pantalla.
 
 ### 8. Frontend
 
@@ -308,7 +328,7 @@ El resultado viaja en el estado de navegación, nunca en la URL: si se recarga l
 
 ### Pendiente
 
-- Steps de interfaz para los features BDD, pruebas E2E y reportes
+- Pipeline de CI y reportes de pruebas
 
 ## Aviso
 

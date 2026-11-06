@@ -1,3 +1,4 @@
+/* Un paso de la guía: ícono en un cuadro blanco, título y descripción. */
 .paso {
   display: flex;
   flex: 1;

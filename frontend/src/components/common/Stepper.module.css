@@ -1,3 +1,4 @@
+/* Indicador de pasos: estados completado, actual y pendiente. */
 .pasos {
   display: flex;
   align-items: center;

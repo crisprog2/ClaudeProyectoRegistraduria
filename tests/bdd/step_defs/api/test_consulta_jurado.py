@@ -1,7 +1,10 @@
 """Steps del feature consulta_jurado.feature (ejecutados contra la API)."""
+import pytest
 from pytest_bdd import given, parsers, scenarios, then
 
 from support.data_loader import caso
+
+pytestmark = pytest.mark.api
 
 scenarios('consulta_jurado.feature')
 

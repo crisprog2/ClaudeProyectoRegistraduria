@@ -1,0 +1,67 @@
+{
+  "titulos_pestana": {
+    "consulta": "Consulta electoral · ConsultaVoto",
+    "resultado": "Tu información electoral · ConsultaVoto",
+    "no_encontrada": "Página no encontrada · ConsultaVoto"
+  },
+  "avisos_obligatorios": {
+    "demo": "Datos ficticios de muestra. No está conectado a los registros oficiales.",
+    "pie": "Prototipo visual · Información de ejemplo, sin validez oficial.",
+    "marca": "Proyecto de portafolio QA"
+  },
+  "frases_prohibidas": ["Registraduría", "Registraduria", "Estado Civil"],
+  "cedulas_formateadas": [
+    {"id": "diez_digitos", "escenario": "solo_votante", "formateada": "1.023.456.789"},
+    {"id": "ocho_digitos", "escenario": "solo_votante_cedula_8_digitos", "formateada": "79.563.214"},
+    {"id": "siete_digitos", "escenario": "solo_votante_cedula_7_digitos", "formateada": "4.567.891"}
+  ],
+  "jurados": [
+    {
+      "id": "misma_mesa",
+      "escenario": "jurado_misma_mesa",
+      "aviso": "Tienes una designación como jurado en la misma mesa donde votas",
+      "detalle_tarjeta": "Es la misma mesa donde vas a votar",
+      "nota_mapa": "En este ejemplo, votas y prestas servicio como jurado en la misma mesa 018.",
+      "titulo_nota": "Una mesa, dos responsabilidades"
+    },
+    {
+      "id": "otra_mesa",
+      "escenario": "jurado_otra_mesa_mismo_puesto",
+      "aviso": "Tienes una designación como jurado en otra mesa de tu puesto",
+      "detalle_tarjeta": "Es otra mesa del mismo puesto donde vas a votar",
+      "nota_mapa": "En este ejemplo, votas en la mesa 017 y prestas servicio en la mesa 019.",
+      "titulo_nota": "Dos mesas, un mismo puesto"
+    },
+    {
+      "id": "otro_puesto",
+      "escenario": "jurado_otro_puesto",
+      "aviso": "Tienes una designación como jurado en otro puesto",
+      "detalle_tarjeta": "Es un puesto distinto al de tu votación",
+      "nota_mapa": "Este mapa muestra tu lugar de votación. Tu puesto de servicio es Institución Educativa Los Almendros.",
+      "titulo_nota": "Dos lugares, dos responsabilidades"
+    }
+  ],
+  "mapa": {
+    "con_calles": "solo_votante",
+    "sin_calles": "solo_votante_cedula_8_digitos",
+    "nombres_de_calles": ["Calle 48", "Calle 49", "Carrera 65", "Carrera 66"],
+    "lugar_repetido": "Bogotá, D.C. · Bogotá, D.C.",
+    "lugar_unico": "Bogotá, D.C."
+  },
+  "errores_del_campo": [
+    {"id": "vacio", "valor": "", "codigo": "CEDULA_REQUERIDA"},
+    {"id": "solo_espacios", "valor": "   ", "codigo": "CEDULA_REQUERIDA"},
+    {"id": "con_puntos", "valor": "1.023.456.789", "codigo": "CEDULA_FORMATO_INVALIDO"},
+    {"id": "con_letras", "valor": "abc123456", "codigo": "CEDULA_FORMATO_INVALIDO"},
+    {"id": "cero_inicial", "valor": "0123456789", "codigo": "CEDULA_FORMATO_INVALIDO"},
+    {"id": "cinco_digitos", "valor": "12345", "codigo": "CEDULA_FORMATO_INVALIDO"},
+    {"id": "once_digitos", "valor": "10987654321", "codigo": "CEDULA_FORMATO_INVALIDO"}
+  ],
+  "panel_sin_resultado": {
+    "no_encontrada": {"titulo": "No encontramos información para esta cédula", "detalle": "Verifica el número e inténtalo de nuevo. Solo existen cédulas de ejemplo."},
+    "demasiadas_consultas": {"titulo": "Hiciste demasiadas consultas", "detalle": "Intenta de nuevo en unos segundos."},
+    "falla": {"titulo": "No pudimos completar la consulta", "detalle": "Intenta de nuevo más tarde."}
+  },
+  "anchos_de_pantalla": [1440, 1024, 768, 390, 320],
+  "ruta_inexistente": "/esta-ruta-no-existe"
+}

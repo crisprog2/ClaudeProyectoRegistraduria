@@ -1,3 +1,4 @@
+/* Tarjeta base: cada uso agrega su relleno y su espaciado. */
 .tarjeta {
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-grande);

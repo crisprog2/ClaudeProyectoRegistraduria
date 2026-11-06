@@ -1,7 +1,10 @@
 """Steps del feature validaciones_cedula.feature (ejecutados contra la API)."""
+import pytest
 from pytest_bdd import given, parsers, scenarios, then, when
 
 from support.data_loader import caso
+
+pytestmark = pytest.mark.api
 
 scenarios('validaciones_cedula.feature')
 

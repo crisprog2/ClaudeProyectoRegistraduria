@@ -18,6 +18,7 @@ export default function useConsultaCedula() {
   const [consultando, setConsultando] = useState(false);
   const [error, setError] = useState(null);
 
+  /** Valida en el cliente y, solo si el formato es correcto, consulta la API y navega al resultado. */
   async function consultar(valor) {
     const validacion = validarCedula(valor);
     if (validacion.error) {

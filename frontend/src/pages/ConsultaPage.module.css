@@ -1,3 +1,4 @@
+/* Pantalla de consulta: espaciado vertical y formulario junto al panel. */
 .pagina {
   display: flex;
   flex-direction: column;

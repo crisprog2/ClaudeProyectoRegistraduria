@@ -31,11 +31,13 @@ export default function CedulaForm({ consultando, error, onConsultar, onEditar }
     if (errorDelCampo) campo.current?.focus();
   }, [error, errorDelCampo]);
 
+  /** Evita la recarga del navegador y entrega el valor tal como se escribió (el hook lo valida). */
   function enviar(evento) {
     evento.preventDefault();
     onConsultar(valor);
   }
 
+  /** Actualiza el valor y quita el error en cuanto la persona empieza a corregir. */
   function cambiar(evento) {
     setValor(evento.target.value);
     if (error) onEditar();

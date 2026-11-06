@@ -1,3 +1,4 @@
+/* Navegación principal: la sección activa lleva una barra azul. */
 .secciones {
   display: flex;
   align-items: center;

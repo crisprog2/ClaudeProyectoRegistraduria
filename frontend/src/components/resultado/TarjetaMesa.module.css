@@ -1,3 +1,4 @@
+/* Tarjeta de una mesa: encabezado, datos y ciudad y departamento en dos columnas. */
 .tarjeta {
   display: flex;
   flex-direction: column;

@@ -1,3 +1,4 @@
+/* Pie de página con la marca ficticia y el aviso de prototipo. */
 .pie {
   border-top: 1px solid var(--color-borde);
   background: var(--color-superficie);

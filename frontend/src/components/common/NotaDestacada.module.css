@@ -1,3 +1,4 @@
+/* Nota con ícono sobre fondo gris azulado ("Antes de ir a votar" y notas del jurado). */
 .nota {
   display: flex;
   align-items: flex-start;

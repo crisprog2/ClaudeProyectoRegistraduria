@@ -1,3 +1,4 @@
+/* Barra superior azul oscura de 32 px. */
 .barra {
   background: var(--color-azul-institucional);
   color: var(--color-texto-invertido);

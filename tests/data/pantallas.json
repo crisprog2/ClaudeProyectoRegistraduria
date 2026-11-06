@@ -1,0 +1,10 @@
+[
+  {"id": "consulta"},
+  {"id": "error_vacio", "valor": ""},
+  {"id": "error_formato", "valor": "1.023.456.789"},
+  {"id": "no_encontrada", "valor": "1000000000"},
+  {"id": "votante", "escenario": "solo_votante"},
+  {"id": "jurado_misma_mesa", "escenario": "jurado_misma_mesa"},
+  {"id": "jurado_otro_puesto", "escenario": "jurado_otro_puesto"},
+  {"id": "no_existe", "ruta": "/esta-ruta-no-existe"}
+]

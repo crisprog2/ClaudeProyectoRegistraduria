@@ -1,3 +1,4 @@
+/* Caja del campo de cédula: estados normal, con foco y con error. */
 .caja {
   display: flex;
   align-items: center;

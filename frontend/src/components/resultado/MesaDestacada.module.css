@@ -1,3 +1,4 @@
+/* Bloque destacado de mesa: variantes votación (azul) y jurado (amarillo). */
 .bloque {
   display: flex;
   flex-wrap: wrap;

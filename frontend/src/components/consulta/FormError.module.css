@@ -1,3 +1,4 @@
+/* Mensaje de error del campo, en el lugar del texto de ayuda. */
 .error {
   display: flex;
   align-items: center;

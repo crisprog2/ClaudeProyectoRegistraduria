@@ -1,8 +1,11 @@
 """Steps del feature consulta_lugar_votacion.feature (ejecutados contra la API)."""
+import pytest
 from pytest_bdd import given, scenarios, then, when
 
 from support.data_loader import caso
 from support.edad import edad_esperada
+
+pytestmark = pytest.mark.api
 
 scenarios('consulta_lugar_votacion.feature')
 
