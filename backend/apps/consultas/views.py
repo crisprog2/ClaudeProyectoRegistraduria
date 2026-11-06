@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
+from .esquema import documentar_consulta
 from .serializers import ResultadoConsultaSerializer
 from .services import consultar_por_cedula
 from .validators import validar_cedula
@@ -29,6 +30,7 @@ class ConsultaView(APIView):
     parser_classes = [JSONParser]
     throttle_classes = [ConsultaRateThrottle]
 
+    @documentar_consulta
     def post(self, request):
         """Valida la cédula, busca a la persona y devuelve su información electoral."""
         if not isinstance(request.data, dict):

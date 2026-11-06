@@ -4,6 +4,8 @@ import requests
 from support import config
 
 RUTA_CONSULTA = '/api/consulta/'
+RUTA_ESQUEMA = '/api/schema/'
+RUTA_DOCUMENTACION = '/api/docs/'
 
 
 class ConsultaApiClient:
@@ -36,6 +38,19 @@ class ConsultaApiClient:
     def enviar(self, metodo, **kwargs):
         """Petición libre al endpoint de consulta; kwargs se pasan tal cual a requests."""
         return self.sesion.request(metodo, self.url_consulta, timeout=self.timeout, **kwargs)
+
+    def enviar_solicitud(self, solicitud):
+        """Envía un caso de solicitudes_invalidas.json: método, cuerpo crudo y Content-Type opcionales."""
+        opciones = {}
+        if 'cuerpo_crudo' in solicitud:
+            opciones['data'] = solicitud['cuerpo_crudo'].encode('utf-8')
+            opciones['headers'] = {'Content-Type': solicitud['content_type']}
+        return self.enviar(solicitud['metodo'], **opciones)
+
+    def obtener(self, ruta, **kwargs):
+        """GET a cualquier ruta del servidor; admite una ruta relativa o una URL absoluta."""
+        url = ruta if ruta.startswith('http') else self.base_url + ruta
+        return self.sesion.get(url, timeout=self.timeout, **kwargs)
 
     def servidor_disponible(self):
         """True si hay un servidor escuchando en base_url (no consume el límite de consultas)."""

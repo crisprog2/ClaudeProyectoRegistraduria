@@ -32,8 +32,9 @@ def env_lista(nombre):
 
 
 def env_bool(nombre, por_defecto=False):
-    """Lee una variable como booleano. Acepta 1, true, yes, si o sí (sin importar mayúsculas)."""
-    return os.environ.get(nombre, str(por_defecto)).strip().lower() in ('1', 'true', 'yes', 'si', 'sí')
+    """Lee una variable como booleano (1, true, yes, si o sí, sin importar mayúsculas); si está vacía usa el valor por defecto."""
+    valor = os.environ.get(nombre, '').strip() or str(por_defecto)
+    return valor.lower() in ('1', 'true', 'yes', 'si', 'sí')
 
 
 def env_entero_positivo(nombre, por_defecto):
@@ -57,6 +58,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'apps.consultas',
 ]
 
@@ -134,6 +137,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Todas las respuestas de error con el formato {codigo, mensaje}.
     'EXCEPTION_HANDLER': 'apps.consultas.exceptions.manejador_de_errores',
     # Límite de consultas por IP para evitar recorridos masivos de cédulas.
@@ -143,6 +147,22 @@ REST_FRAMEWORK = {
     # DRF usa X-Forwarded-For, que el cliente puede falsificar para evadir el límite.
     # Si se despliega detrás de un proxy, poner aquí el número de proxies de confianza.
     'NUM_PROXIES': 0,
+}
+
+# Documentación OpenAPI en /api/schema/ y Swagger UI en /api/docs/.
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'ConsultaVoto API',
+    'DESCRIPTION': (
+        'API de una app **ficticia** de consulta electoral, creada como proyecto de portafolio QA. '
+        'Todos los datos son inventados y el sitio no pertenece a ninguna entidad oficial.'
+    ),
+    'VERSION': '1.0.0',
+    # OpenAPI 3.1 usa JSON Schema estándar: las pruebas validan las respuestas sin convertir el esquema.
+    'OAS_VERSION': '3.1.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Swagger UI se sirve desde el proyecto (drf-spectacular-sidecar), sin CDN.
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
 }
 
 CORS_ALLOWED_ORIGINS = env_lista('CORS_ALLOWED_ORIGINS')
