@@ -213,6 +213,16 @@ pip install -r backend/requirements.txt -r tests/requirements.txt
 python -m playwright install        # navegadores para las pruebas E2E
 ```
 
+#### Controlador de MySQL
+
+El proyecto usa **PyMySQL** en lugar de `mysqlclient`, que es el controlador que Django recomienda.
+
+- **Problema:** el Control inteligente de aplicaciones de Windows 11 bloqueó el componente compilado de `mysqlclient` (`_mysql.pyd`, sin firma digital). El backend no arrancaba y mostraba el error *"Una directiva de Control de aplicaciones bloqueó este archivo"*.
+- **Decisión:** PyMySQL está escrito solo en Python, así que no tiene archivos compilados que Windows pueda bloquear. Así no hay que desactivar esa protección de Windows. Se registra como `MySQLdb` en [`backend/config/__init__.py`](backend/config/__init__.py) y se usa igual en local y en CI.
+- **Desventaja:** Django no soporta PyMySQL oficialmente. Lo respaldan las pruebas del backend, una de las cuales falla si la conexión deja de usar PyMySQL.
+
+Si tu entorno se creó antes de este cambio, `mysqlclient` sigue instalado, pero ya no se usa. Puedes quitarlo con `pip uninstall mysqlclient`.
+
 ### 2. Base de datos
 
 Con un usuario administrador de MySQL, crea la base y un usuario propio del proyecto. `test_registraduria` es la base temporal que pytest-django crea y borra en cada corrida de pruebas:
@@ -308,6 +318,13 @@ pytest tests -m smoke                # subconjunto crítico de todas las suites
 Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos de prueba en [`tests/data/`](tests/data). Las URL se toman de `API_BASE_URL` y `FRONTEND_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000` y `http://localhost:5173`). Si falta algún servidor, la corrida se detiene con instrucciones.
 
 La auditoría con axe-core detecta solo una parte de los problemas de accesibilidad: no reemplaza una revisión con lector de pantalla.
+
+**WebKit en Windows 11:** con el Control inteligente de aplicaciones activo, Windows puede bloquear archivos de WebKit, como `JavaScriptCore.dll`. Cuando eso pasa, todas las pruebas de WebKit fallan al arrancar el navegador, aunque el código esté bien. El bloqueo fue intermitente: en las corridas siguientes no se repitió. Para confirmarlo, busca eventos con id 3077 en el registro de Windows *Microsoft-Windows-CodeIntegrity/Operational*:
+
+```powershell
+Get-WinEvent -LogName 'Microsoft-Windows-CodeIntegrity/Operational' -MaxEvents 50 |
+  Where-Object Id -eq 3077 | Select-Object TimeCreated, Message
+```
 
 ### 8. Frontend
 

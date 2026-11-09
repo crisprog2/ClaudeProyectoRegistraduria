@@ -229,8 +229,10 @@ Decisiones:
 - ✅ Frontend fase 4: accesibilidad (0 violaciones de axe), ajuste a pantallas pequeñas de 1440 a 320 px y página 404.
 - ✅ Pruebas de interfaz: 14 casos BDD y 112 E2E pasan en Chromium, Firefox y WebKit; mutaciones detectadas. Los 2 E2E de Swagger UI también pasan en los tres navegadores.
 - ✅ Todo el código documentado (backend, pruebas y frontend).
-- ✅ Controlador de MySQL cambiado a PyMySQL (rama `fix/controlador-pymysql`): Windows bloqueó mysqlclient el 2026-11-09.
+- ✅ Controlador de MySQL cambiado a PyMySQL, ya en `main` (commit `8694003`): Windows bloqueó mysqlclient el 2026-11-09. Explicado en el README (paso 1, "Controlador de MySQL").
 - ✅ Swagger UI y OpenAPI 3.1 en la rama `feature/swagger`. `env_bool` ya usa el valor por defecto cuando la variable está vacía (antes, un `DJANGO_DEBUG=` vacío apagaba `DEBUG` y dejaba sin estilos al admin).
+- ⚠️ El Control inteligente de aplicaciones de Windows 11 está activo en el equipo del usuario. El 2026-11-09 bloqueó una vez archivos de WebKit (`JavaScriptCore.dll`, `sqlite3.dll`), y las 114 pruebas E2E de WebKit fallaron al arrancar; en las corridas siguientes no se repitió. Si WebKit falla en bloque, revisar primero los eventos 3077 del registro *Microsoft-Windows-CodeIntegrity/Operational* (comando en el README). No desactivar esa protección sin que el usuario lo decida.
+- ⚠️ Prueba posiblemente inestable: `test_saltar_al_contenido_mueve_el_foco_sin_perder_el_resultado[webkit]` falló una vez dentro de la suite completa (un elemento no quedó dentro de la ventana visible) y pasó 5 de 5 veces sola y en la corrida completa siguiente. Investigar si se repite.
 - ⏳ Siguiente: pipeline de CI en GitHub Actions y reportes de pruebas. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
