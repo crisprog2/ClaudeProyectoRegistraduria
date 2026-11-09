@@ -17,7 +17,7 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 |------|------------|
 | Backend | Python 3.11, Django 5.2 LTS, Django REST Framework |
 | Documentación de la API | OpenAPI 3.1 y Swagger UI (drf-spectacular) |
-| Base de datos | MySQL 8.0 |
+| Base de datos | MySQL 8.0 con el controlador PyMySQL |
 | Frontend | React + Vite |
 | Pruebas unitarias / integración | pytest + pytest-django |
 | Pruebas de API | pytest + requests |
@@ -184,7 +184,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Admin de Django para revisar los datos | ✅ |
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Documentación de la API con Swagger UI y OpenAPI 3.1 | ✅ |
-| Pruebas white-box del backend (pytest-django, 96 pruebas) | ✅ |
+| Pruebas white-box del backend (pytest-django, 97 pruebas) | ✅ |
 | Pruebas black-box de la API y su documentación (pytest + requests, 110 pruebas) | ✅ |
 | Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |

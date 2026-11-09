@@ -1,5 +1,6 @@
-"""Pruebas white-box de la lectura de variables de entorno en settings."""
+"""Pruebas white-box de la configuración: variables de entorno y controlador de MySQL."""
 import pytest
+from django.db import connection
 
 from config.settings.base import env_bool
 
@@ -31,3 +32,10 @@ def test_valor_explicito_gana_sobre_el_valor_por_defecto(monkeypatch, valor):
     monkeypatch.setenv('VARIABLE_DE_PRUEBA', valor)
 
     assert env_bool('VARIABLE_DE_PRUEBA', por_defecto=True) is False
+
+
+def test_la_conexion_usa_pymysql(db):
+    """mysqlclient queda fuera: su componente compilado lo bloquea Windows (ver config/__init__.py)."""
+    connection.ensure_connection()
+
+    assert type(connection.connection).__module__.startswith('pymysql')

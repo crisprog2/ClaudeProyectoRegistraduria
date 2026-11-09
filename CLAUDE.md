@@ -24,6 +24,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
 - **Documentación de la API**: drf-spectacular (OpenAPI 3.1) y Swagger UI servido desde el proyecto con drf-spectacular-sidecar.
 - **Entorno**: un solo entorno virtual en la raíz (`.venv/`) para backend y pruebas. Versiones fijadas con `==` en `backend/requirements.txt` y `tests/requirements.txt`. Navegadores de Playwright (Chromium, Firefox, WebKit) instalados fuera del repo.
 - **Base de datos**: servidor MySQL 8.0 **local** del usuario (servicio de Windows, puerto 3306). No se usa Docker. En CI se usa el contenedor `mysql:8.0` como servicio de GitHub Actions para mantener la misma versión mayor.
+- **Controlador de MySQL**: PyMySQL, registrado como `MySQLdb` en `backend/config/__init__.py`, en local y en CI. mysqlclient se retiró porque el Control inteligente de aplicaciones de Windows 11 bloqueó su componente compilado, que no tiene firma digital. Django no soporta PyMySQL oficialmente: lo respaldan las pruebas. La conexión local sale cifrada con TLS, así que `caching_sha2_password` funciona sin instalar `cryptography`.
 - **Frontend**: React + Vite + react-router-dom.
 - **Pruebas** (todas en Python):
   - `backend/tests/` — white-box, pytest + pytest-django.
@@ -125,7 +126,7 @@ Documentación: `/api/docs/` (Swagger UI) y `/api/schema/` (OpenAPI; YAML por de
 - Los docstrings de los serializadores se publican en Swagger: las notas internas van en comentarios.
 - Está siempre activa porque la API ya es abierta y los datos son ficticios; revisarlo si se despliega en un servidor público. Con `DEBUG=False` la página responde, pero Django no sirve sus archivos estáticos y se ve en blanco: un despliegue necesitaría `collectstatic` y un servidor de estáticos.
 
-Pruebas white-box (`backend/tests/`, 96): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool`). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+Pruebas white-box (`backend/tests/`, 97): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool` y controlador PyMySQL). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
 
 Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
 - `test_consulta_cedula.py`: respuesta exacta de los 10 ciudadanos del fixture, reglas de los escenarios mínimos (misma mesa, otra mesa del mismo puesto, otro puesto, solo votante), espacios externos, contrato de claves y que no se expongan datos sensibles.
@@ -218,7 +219,7 @@ Decisiones:
 - ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
-- ✅ Pruebas white-box del backend: 96 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
+- ✅ Pruebas white-box del backend: 97 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
 - ✅ Pruebas black-box de la API: 110 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
@@ -228,6 +229,7 @@ Decisiones:
 - ✅ Frontend fase 4: accesibilidad (0 violaciones de axe), ajuste a pantallas pequeñas de 1440 a 320 px y página 404.
 - ✅ Pruebas de interfaz: 14 casos BDD y 112 E2E pasan en Chromium, Firefox y WebKit; mutaciones detectadas. Los 2 E2E de Swagger UI también pasan en los tres navegadores.
 - ✅ Todo el código documentado (backend, pruebas y frontend).
+- ✅ Controlador de MySQL cambiado a PyMySQL (rama `fix/controlador-pymysql`): Windows bloqueó mysqlclient el 2026-11-09.
 - ✅ Swagger UI y OpenAPI 3.1 en la rama `feature/swagger`. `env_bool` ya usa el valor por defecto cuando la variable está vacía (antes, un `DJANGO_DEBUG=` vacío apagaba `DEBUG` y dejaba sin estilos al admin).
 - ⏳ Siguiente: pipeline de CI en GitHub Actions y reportes de pruebas. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
