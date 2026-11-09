@@ -3,6 +3,7 @@ Fixtures de nivel raíz de las pruebas black-box (API, BDD y E2E).
 
 La configuración (.env) se lee en support/config.py y los datos de prueba en
 support/data_loader.py; cada nivel agrega sus fixtures en su propio conftest.py.
+También registra el plugin del reporte de Allure (support/allure_reporte.py).
 """
 import pytest
 import requests
@@ -11,6 +12,9 @@ from support import config
 from support.api_client import ConsultaApiClient
 from support.pages.consulta_page import ConsultaPage
 from support.pages.resultado_page import ResultadoPage
+
+# Organiza el reporte de Allure; solo actúa cuando pytest corre con --alluredir.
+pytest_plugins = ['support.allure_reporte']
 
 COMO_LEVANTAR_BACKEND = (
     '    $env:CONSULTA_LIMITE_POR_MINUTO = "1000"\n'

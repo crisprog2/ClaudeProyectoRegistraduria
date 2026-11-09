@@ -30,4 +30,4 @@ jobs:
         run: echo "Pendiente - pytest -m bdd"
       - name: Pruebas E2E
         run: echo "Pendiente - playwright install y pytest -m e2e"
-      # Pendiente: publicar reportes (pytest-html, trazas de Playwright) como artefactos.
+      # Pendiente: generar el reporte de Allure (reportes/) y publicarlo como artefacto, con trazas de Playwright.
