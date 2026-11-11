@@ -5,6 +5,10 @@
 # scripts/pruebas.py: este archivo solo prepara la máquina y lo llama, así que
 # otra herramienta (por ejemplo, un Jenkinsfile) puede reutilizar los mismos pasos.
 #
+# Las máquinas se fijan en ubuntu-24.04 en lugar de ubuntu-latest: el CI no cambia
+# de sistema sin aviso, y en la primera corrida (2026-11-11) la imagen de Ubuntu 26.04
+# no pudo resolver los servidores de paquetes de Ubuntu al instalar los navegadores.
+#
 # No necesita secretos: la clave de Django se genera en cada corrida y las claves
 # de MySQL solo valen dentro del contenedor temporal de cada trabajo.
 name: CI
@@ -41,7 +45,7 @@ env:
 jobs:
   backend:
     name: Backend (white-box)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       mysql: &mysql
@@ -73,7 +77,7 @@ jobs:
 
   api:
     name: API y BDD por la API
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       mysql: *mysql
@@ -104,7 +108,7 @@ jobs:
 
   frontend:
     name: Frontend (build)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7.0.1
@@ -122,7 +126,7 @@ jobs:
 
   interfaz:
     name: Interfaz (${{ matrix.navegador }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     strategy:
       # Si un navegador falla, los otros terminan igual para ver todos los errores.
@@ -145,8 +149,15 @@ jobs:
       - name: Instalar dependencias del frontend
         working-directory: frontend
         run: npm ci
+      # Descarga paquetes de Ubuntu con apt: se reintenta por si la red falla un momento.
       - name: Instalar ${{ matrix.navegador }} y sus dependencias del sistema
-        run: python -m playwright install --with-deps ${{ matrix.navegador }}
+        run: |
+          for intento in 1 2 3; do
+            python -m playwright install --with-deps ${{ matrix.navegador }} && exit 0
+            echo "Falló el intento $intento; reintentando en 30 s"
+            sleep 30
+          done
+          exit 1
       - name: Migraciones y datos de demostración
         run: python scripts/pruebas.py base
       - name: Pruebas de interfaz (BDD y E2E)
@@ -170,7 +181,7 @@ jobs:
 
   reporte:
     name: Reporte de Allure
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     # Se genera aunque alguna suite falle: es justo cuando más se necesita.
     needs: [backend, api, interfaz]
