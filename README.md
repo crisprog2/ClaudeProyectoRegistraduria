@@ -1,5 +1,7 @@
 # ConsultaVoto — Proyecto de portafolio QA
 
+[![CI](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml/badge.svg)](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml)
+
 > ⚠️ **Proyecto ficticio de demostración.** ConsultaVoto no es un sitio oficial ni está conectado a ningún registro electoral real. Todos los nombres, cédulas, puestos y mesas son datos inventados.
 
 Aplicación web full stack de consulta electoral, construida como **sistema bajo prueba** para mostrar buenas prácticas de Quality Engineering y automatización de pruebas en varios niveles: unitario, API, BDD y E2E.
@@ -200,7 +202,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Reporte de Allure con todas las suites (local) | ✅ |
-| Pipeline de CI en GitHub Actions (todas las suites y reporte de Allure) | 🧪 Implementado; falta su primera corrida en GitHub |
+| Pipeline de CI en GitHub Actions: 605 pruebas en tres navegadores y reporte de Allure | ✅ |
 
 ## Integración continua (CI)
 
@@ -225,6 +227,8 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Reporte:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
 - **Seguridad:** permisos de solo lectura, acciones de GitHub fijadas por versión exacta, y una corrida nueva cancela la anterior de la misma rama.
+- **Resultado:** cada corrida ejecuta 605 pruebas: 97 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
+- **Ajustes de la primera puesta en marcha:** las primeras corridas fallaron por el entorno de GitHub, no por el código. Las máquinas no podían descargar paquetes de Ubuntu (de ahí la imagen de Playwright), la caché de pip no funcionaba dentro del contenedor y Firefox no arrancaba porque `HOME` pertenecía a otro usuario. Los detalles están en `CLAUDE.md`.
 
 ## Ejecución
 
@@ -443,7 +447,7 @@ npm run reporte
 
 ### Pendiente
 
-- Primera corrida del CI en GitHub y, cuando esté estable, exigir que pase antes de hacer merge a `main` (regla de protección de la rama)
+- Exigir que el CI pase antes de hacer merge a `main` (regla de protección de la rama, que se activa en GitHub)
 - Publicar el reporte de Allure en GitHub Pages, con historial y tendencias
 - Cobertura de código
 - Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
