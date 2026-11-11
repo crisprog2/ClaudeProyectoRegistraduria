@@ -3,9 +3,11 @@ Fixtures del nivel backend (white-box).
 
 Las pruebas corren contra MySQL (base test_registraduria, creada y borrada
 por pytest-django) con los datos de demostración del fixture datos_demo.
+Con --alluredir=, sus resultados aparecen como "Backend" en el reporte de Allure.
 """
 from datetime import date
 
+import allure
 import pytest
 from django.core.cache import cache
 from django.core.management import call_command
@@ -21,6 +23,12 @@ FECHA_REFERENCIA = date(2026, 11, 3)
 def datos_demo(db):
     """Carga el fixture datos_demo.json en la base de pruebas."""
     call_command('loaddata', 'datos_demo', verbosity=0)
+
+
+@pytest.fixture(autouse=True)
+def _grupo_allure():
+    """Agrupa estas pruebas como "Backend" en el reporte de Allure (sin --alluredir no hace nada)."""
+    allure.dynamic.parent_suite('Backend')
 
 
 @pytest.fixture(autouse=True)

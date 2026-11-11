@@ -21,6 +21,8 @@ class ConsultaApiClient:
         self.base_url = base_url
         self.timeout = timeout
         self.sesion = requests.Session()
+        # Para adjuntar la petición y la respuesta al reporte de Allure cuando una prueba falla.
+        self.ultima_respuesta = None
 
     @property
     def url_consulta(self):
@@ -37,7 +39,8 @@ class ConsultaApiClient:
 
     def enviar(self, metodo, **kwargs):
         """Petición libre al endpoint de consulta; kwargs se pasan tal cual a requests."""
-        return self.sesion.request(metodo, self.url_consulta, timeout=self.timeout, **kwargs)
+        self.ultima_respuesta = self.sesion.request(metodo, self.url_consulta, timeout=self.timeout, **kwargs)
+        return self.ultima_respuesta
 
     def enviar_solicitud(self, solicitud):
         """Envía un caso de solicitudes_invalidas.json: método, cuerpo crudo y Content-Type opcionales."""
@@ -50,7 +53,8 @@ class ConsultaApiClient:
     def obtener(self, ruta, **kwargs):
         """GET a cualquier ruta del servidor; admite una ruta relativa o una URL absoluta."""
         url = ruta if ruta.startswith('http') else self.base_url + ruta
-        return self.sesion.get(url, timeout=self.timeout, **kwargs)
+        self.ultima_respuesta = self.sesion.get(url, timeout=self.timeout, **kwargs)
+        return self.ultima_respuesta
 
     def servidor_disponible(self):
         """True si hay un servidor escuchando en base_url (no consume el límite de consultas)."""

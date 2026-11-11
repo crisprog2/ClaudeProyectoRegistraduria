@@ -31,6 +31,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
   - `tests/api/` — black-box de la API, pytest + requests.
   - `tests/bdd/` — pytest-bdd, Gherkin **en español** (`# language: es`).
   - `tests/e2e/` — Playwright para Python (pytest-playwright).
+- **Reportes**: Allure 3 (`reportes/`, Node) con resultados de `allure-pytest`. Ver la sección "Reporte de Allure".
 - **CI**: GitHub Actions en `.github/workflows/ci.yml`.
 
 ## Diseño (Figma)
@@ -133,7 +134,7 @@ Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke
 - `test_validaciones_cedula.py`: 19 casos de cédula requerida, formato inválido y no encontrada, con código y mensaje exactos.
 - `test_protocolo_http.py`: 405 (con cabecera `Allow`), 415 y JSON que no es objeto.
 - `test_documentacion_api.py`: las respuestas reales de todos los casos de `tests/data/` cumplen la especificación, y los ejemplos documentados coinciden con lo que responde la API. `support/openapi.py` marca cada objeto con `additionalProperties: false`, porque OpenAPI admite campos no documentados por defecto. El 429 se comprueba en white-box. Los archivos estáticos de Swagger exigen un servidor con `DEBUG` activo.
-- Soporte en `tests/support/`: `config.py` (`API_BASE_URL` del `.env`), `api_client.py` (`ConsultaApiClient`), `data_loader.py` (`cargar`, `caso`, `como_parametros`: el campo `"smoke": true` de un caso agrega el marker) y `edad.py` (oráculo de edad independiente del backend, con la fecha de America/Bogota).
+- Soporte en `tests/support/`: `config.py` (`API_BASE_URL` del `.env`), `api_client.py` (`ConsultaApiClient`; guarda `ultima_respuesta` para el reporte de Allure), `data_loader.py` (`cargar`, `caso`, `como_parametros`: el campo `"smoke": true` de un caso agrega el marker) y `edad.py` (oráculo de edad independiente del backend, con la fecha de America/Bogota).
 - Datos en `tests/data/`: `ciudadanos.json`, `cedulas_invalidas.json`, `solicitudes_invalidas.json`, `mensajes_error.json` y `contrato_consulta.json`.
 - `pytest.ini` de la raíz agrega `pythonpath = tests` (imports `support.*`). Si no hay servidor, el fixture `api` detiene la corrida con instrucciones.
 - Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite. También se detectan en la documentación: campo sin documentar, tipo distinto del real, código o ejemplo faltante, ejemplo desactualizado, mensaje cambiado, Swagger desde un CDN, nombre de la entidad real, sin aviso de datos ficticios y sin `Retry-After`.
@@ -160,6 +161,24 @@ Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backen
 - `base_url` y la ventana de 1440x900 están en `tests/conftest.py`. La fixture `aplicacion_levantada` detiene la corrida con instrucciones si falta un servidor. El navegador se elige con `--browser` y `--headed` (no hay variables `BROWSER` ni `HEADLESS`).
 - Mutación verificada: cédula en la URL, quitar `DemoBanner`, conservar el estado al recargar, saltarse la validación del cliente, edad visible para el jurado, calles en todos los mapas, cédula sin puntos, nombre de la entidad real, salto que cambia la URL, sin foco al navegar, navegación sin `flex-wrap` (solo falla a 320 px) y contraste bajo (axe).
 - axe no evalúa el contraste de los placeholders, y tampoco detectó una mutación de texto blanco sobre fondo blanco.
+
+## Reporte de Allure
+
+Un solo reporte de las cuatro suites; por ahora solo se genera en local (el CI todavía no existe). Comandos en el README, paso 9.
+- **Por qué Allure 3:** funciona con Node y no exige Java, que no está instalado. Va en `reportes/`, con su propio `package.json` y su lock (`allure` 3.33.0), separado del frontend. Configuración en `reportes/allurerc.mjs`: idioma español, agrupación por `parentSuite`/`suite`/`subSuite` y etiquetas `host` y `thread` ocultas, porque muestran el nombre del equipo.
+- **Solo `allure-pytest` (2.16.2), en los dos `requirements.txt`:** no se usa `allure-pytest-bdd` porque los dos registran `--alluredir` y pytest no arranca si están instalados juntos. Eso rompería también el backend, que comparte el `.venv`. Los pasos de Gherkin se registran con los hooks de pytest-bdd.
+- **Plugin `tests/support/allure_reporte.py`**, registrado con `pytest_plugins` en `tests/conftest.py`:
+  - **Agrupación:** asigna el nivel (API, BDD, E2E). En BDD agrega el canal ("Por la API" o "Por la interfaz") y el feature, porque los mismos escenarios corren dos veces.
+  - **Escenarios BDD:** título, descripción tomada de la historia de usuario del feature (sin ella, Allure muestra la ruta del archivo en el disco), pasos de Gherkin y cada columna del ejemplo como parámetro.
+  - **Severidad:** las `smoke` son críticas.
+  - **Evidencia en fallos:** la petición y la respuesta de la API (`ConsultaApiClient.ultima_respuesta`, que se reinicia antes de cada prueba porque el cliente dura toda la sesión), y la URL, la captura y la traza de Playwright. La traza se toma del registro de artefactos de pytest-playwright (atributo privado `_playwright_artifacts_recorder`): si se actualiza pytest-playwright, revisarlo.
+  - **Entorno:** escribe `environment.properties` con versiones y URLs, sin secretos.
+- **Backend:** `backend/tests/conftest.py` solo asigna el grupo "Backend"; el backend no importa nada de `tests/support/`.
+- **`reportes/preparar-resultados.mjs`** se ejecuta antes de generar: quita las fixtures que terminaron bien (unas 13 000 por corrida) y el parámetro interno `_pytest_bdd_example`, porque Allure 3 no respeta el modo oculto.
+- **`--alluredir=` siempre con signo igual:** con un espacio y la carpeta ya creada, pytest toma la ruta como argumento, cambia el `rootdir` y el backend pierde su `pytest.ini`.
+- **Visor:** `allure open` escucha por defecto en todas las interfaces de red; el script lo limita a `127.0.0.1`.
+- **Verificado:** con dos pruebas temporales que fallaban a propósito, se adjuntaron la petición y la respuesta 404 en la de API, y la URL, la captura y la traza en la de interfaz. Se borraron después.
+- **Fuera de Git:** `reportes/allure-results/` y `reportes/allure-report/`. Se retiró `pytest-html`, que no se usaba.
 
 ## Frontend
 
@@ -200,6 +219,7 @@ Decisiones:
   - Datos de prueba en `tests/data/*.json`; nada de datos quemados en los tests.
   - BDD: `features/` separado de `step_defs/api/` y `step_defs/interfaz/`; los steps reutilizables de cada canal van en su `common_steps.py`.
   - Markers declarados en `pytest.ini` (`api`, `bdd`, `e2e`, `smoke`, `regression`); `--strict-markers` activo.
+  - Reporte de Allure: un nivel nuevo de pruebas necesita su grupo (`parent_suite`) en `tests/support/allure_reporte.py` o en su `conftest.py`, y `--alluredir=` siempre va con signo igual. Los plugins de pytest propios viven en `tests/support/` y se registran con `pytest_plugins` en `tests/conftest.py`.
   - Escenarios mínimos a cubrir: solo votante, jurado en la misma mesa, jurado en otra mesa o puesto, campo vacío, formato inválido y cédula no encontrada.
 - **Configuración**: todo por variables de entorno (ver `.env.example`); nunca subir `.env`.
 - **Documentación del código**: docstring en cada módulo, clase y función pública, en español. En el frontend: comentario inicial en cada archivo JS y CSS, y JSDoc en cada componente y función. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring. En pruebas, el nombre `test_*` describe el caso; el docstring solo se agrega cuando la intención no es obvia.
@@ -233,7 +253,8 @@ Decisiones:
 - ✅ Swagger UI y OpenAPI 3.1 en la rama `feature/swagger`. `env_bool` ya usa el valor por defecto cuando la variable está vacía (antes, un `DJANGO_DEBUG=` vacío apagaba `DEBUG` y dejaba sin estilos al admin).
 - ⚠️ El Control inteligente de aplicaciones de Windows 11 está activo en el equipo del usuario. El 2026-11-09 bloqueó una vez archivos de WebKit (`JavaScriptCore.dll`, `sqlite3.dll`), y las 114 pruebas E2E de WebKit fallaron al arrancar; en las corridas siguientes no se repitió. Si WebKit falla en bloque, revisar primero los eventos 3077 del registro *Microsoft-Windows-CodeIntegrity/Operational* (comando en el README). No desactivar esa protección sin que el usuario lo decida.
 - ⚠️ Prueba posiblemente inestable: `test_saltar_al_contenido_mueve_el_foco_sin_perder_el_resultado[webkit]` falló una vez dentro de la suite completa (un elemento no quedó dentro de la ventana visible) y pasó 5 de 5 veces sola y en la corrida completa siguiente. Investigar si se repite.
-- ⏳ Siguiente: pipeline de CI en GitHub Actions y reportes de pruebas. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
+- ✅ Reporte de Allure local con las cuatro suites (349 pruebas), en la rama `feature/implementacion-reportes-allure`.
+- ⏳ Siguiente: pipeline de CI en GitHub Actions que publique el reporte de Allure con su historial. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)

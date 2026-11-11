@@ -35,6 +35,8 @@ playwright-report/
 screenshots/
 videos/
 report.html
+reportes/allure-results/
+reportes/allure-report/
 
 # --- IDE / SO ---
 .vscode/

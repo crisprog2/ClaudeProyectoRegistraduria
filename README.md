@@ -23,6 +23,7 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 | Pruebas de API | pytest + requests |
 | BDD | pytest-bdd (Gherkin en español) |
 | E2E / UI | Playwright para Python |
+| Reportes de pruebas | Allure 3 (allure-pytest) |
 | CI | GitHub Actions |
 
 ## Modelo de datos
@@ -139,6 +140,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 - **`conftest.py` por nivel** para aislar fixtures.
 - **Datos de prueba externos** en `tests/data/`, nunca quemados en los tests.
 - **Markers** (`api`, `bdd`, `e2e`, `smoke`, `regression`) para ejecutar suites selectivas.
+- **Un solo reporte de Allure** con los cuatro niveles. Los escenarios BDD muestran cada paso de Gherkin, y las pruebas fallidas adjuntan su evidencia: la petición y la respuesta de la API o la captura y la traza de Playwright.
 
 ## Estructura del proyecto
 
@@ -165,10 +167,11 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 │       └── styles/            # Tokens de diseño y estilos globales
 ├── tests/                     # Pruebas black-box contra la app en ejecución
 │   ├── data/                  # Datos de prueba (JSON)
-│   ├── support/               # Cliente de API, configuración y Page Objects
+│   ├── support/               # Cliente de API, configuración, Page Objects y plugin del reporte de Allure
 │   ├── api/                   # Pruebas de API y de su documentación
 │   ├── bdd/                   # features/ (Gherkin) + step_defs/api y step_defs/interfaz
 │   └── e2e/                   # Flujo, errores, accesibilidad, pantallas pequeñas y Swagger UI con Playwright
+├── reportes/                  # Generador del reporte de Allure (Allure 3, Node)
 ├── pytest.ini                 # Configuración y markers de las pruebas black-box
 └── .env.example               # Variables de entorno requeridas
 ```
@@ -192,6 +195,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
+| Reporte de Allure con todas las suites (local) | ✅ |
 | Pipeline de CI | 🚧 Placeholder |
 
 ## Ejecución
@@ -200,6 +204,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 
 - Python 3.11 (Django 5.2 LTS; Django 6 exige Python 3.12+)
 - MySQL 8.0 en local
+- Node.js, para el frontend y el reporte de Allure
 - Windows / PowerShell en los ejemplos. En Linux o macOS el entorno se activa con `source .venv/bin/activate`.
 
 ### 1. Entorno virtual y dependencias
@@ -278,7 +283,7 @@ cd backend
 pytest
 ```
 
-pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar.
+pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar. Para incluir estas pruebas en el reporte de Allure, ver el paso 9.
 
 ### 7. Pruebas black-box: API, BDD y E2E
 
@@ -319,6 +324,8 @@ Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos
 
 La auditoría con axe-core detecta solo una parte de los problemas de accesibilidad: no reemplaza una revisión con lector de pantalla.
 
+Para ver los resultados en el reporte de Allure, con la evidencia de las pruebas que fallan, ver el paso 9.
+
 **WebKit en Windows 11:** con el Control inteligente de aplicaciones activo, Windows puede bloquear archivos de WebKit, como `JavaScriptCore.dll`. Cuando eso pasa, todas las pruebas de WebKit fallan al arrancar el navegador, aunque el código esté bien. El bloqueo fue intermitente: en las corridas siguientes no se repitió. Para confirmarlo, busca eventos con id 3077 en el registro de Windows *Microsoft-Windows-CodeIntegrity/Operational*:
 
 ```powershell
@@ -350,9 +357,42 @@ Cédulas de ejemplo para recorrer la aplicación (todas ficticias):
 
 El resultado viaja en el estado de navegación, nunca en la URL: si se recarga la página o se entra directo a `/consulta/resultado`, la aplicación vuelve a `/consulta`. Con el límite normal de 30 consultas por minuto, muchas pruebas seguidas muestran "Hiciste demasiadas consultas".
 
+### 9. Reporte de Allure
+
+Un solo reporte con las pruebas del backend, la API, BDD y E2E. Usa Allure 3, que funciona con Node y no necesita Java. La primera vez, instala el generador con las versiones exactas del `package-lock.json`:
+
+```powershell
+cd reportes
+npm ci
+```
+
+Cada reporte se arma en tres pasos. El paso 2 necesita el backend y el frontend corriendo, como en el paso 7:
+
+```powershell
+# 1. Pruebas del backend; --clean-alluredir vacía los resultados de la corrida anterior
+cd backend
+pytest --alluredir=../reportes/allure-results --clean-alluredir
+
+# 2. Pruebas black-box, desde la raíz; agregan sus resultados a la misma carpeta
+cd ..
+pytest tests --alluredir=reportes/allure-results --tracing retain-on-failure
+
+# 3. Generar el reporte y abrirlo en el navegador
+cd reportes
+npm run reporte
+```
+
+- **Usa `--alluredir=` con el signo igual.** Si la ruta va separada por un espacio y la carpeta ya existe, pytest la toma como una ruta de pruebas. En el paso 1 eso hace que use el `pytest.ini` de la raíz en lugar del de `backend/`, y las pruebas del backend fallan con "settings are not configured".
+- **Sin `--alluredir`, las pruebas no generan resultados para Allure.** Siguen corriendo igual.
+- **Organización:** el reporte agrupa las pruebas en Backend, API, BDD y E2E. Los escenarios BDD se separan por canal ("Por la API" y "Por la interfaz") y por feature, y muestran la historia de usuario y cada paso de Gherkin. Las pruebas `smoke` tienen severidad crítica, y los markers sirven como etiquetas para filtrar.
+- **Evidencia de las pruebas que fallan:** en las de API, la petición y la respuesta. En las de interfaz, la URL, una captura de la página y la traza de Playwright, que se abre en https://trace.playwright.dev. La traza solo se guarda con `--tracing retain-on-failure`, que hace la corrida un poco más lenta: en Chromium pasó de unos 60 a unos 80 segundos. Para varios navegadores, agrega `--browser firefox --browser webkit` al paso 2.
+- **Antes de generar:** `npm run reporte` quita las fixtures que terminaron bien (unas 20 por prueba, de pytest-django y Playwright) y el parámetro interno de pytest-bdd. Las fixtures que fallaron se conservan.
+- **Visor local:** el reporte se abre en `127.0.0.1` y no queda visible en la red. `npm run generar` solo lo genera, y `npm run abrir` lo abre después.
+- **Fuera de Git:** los resultados (`reportes/allure-results/`) y el reporte (`reportes/allure-report/`, unos 11 MB) no se suben.
+
 ### Pendiente
 
-- Pipeline de CI y reportes de pruebas
+- Pipeline de CI, con el reporte de Allure publicado y su historial
 
 ## Aviso
 

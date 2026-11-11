@@ -1,0 +1,15 @@
+{
+  "name": "consultavoto-reportes",
+  "private": true,
+  "description": "Generador del reporte de Allure de todas las suites de pruebas.",
+  "type": "module",
+  "scripts": {
+    "preparar": "node preparar-resultados.mjs allure-results",
+    "generar": "npm run preparar && allure generate allure-results --config ./allurerc.mjs --clean",
+    "abrir": "allure open allure-report --host 127.0.0.1",
+    "reporte": "npm run generar && npm run abrir"
+  },
+  "devDependencies": {
+    "allure": "3.33.0"
+  }
+}
