@@ -1,0 +1,63 @@
+# Pasos comunes de los trabajos que usan Python y MySQL en .github/workflows/ci.yml.
+name: Preparar entorno de pruebas
+description: >-
+  Instala Python con las dependencias fijadas, genera una clave de Django solo
+  para esta corrida y da permisos sobre la base de pruebas al usuario de MySQL.
+  Lee la conexión de las variables MYSQL_* del workflow, así que sirve igual en
+  la máquina de GitHub y dentro de un contenedor (los trabajos de interfaz).
+
+inputs:
+  cache-pip:
+    description: >-
+      Caché de setup-python: "pip" o vacío para desactivarla. Dentro de un contenedor
+      debe ir vacía: setup-python ejecuta el script pip, cuya primera línea apunta a la
+      ruta de Python en la máquina (/opt/hostedtoolcache), que en el contenedor está en
+      /__t y no existe ("spawn .../pip ENOENT").
+    required: false
+    default: pip
+
+runs:
+  using: composite
+  steps:
+    - name: Instalar Python
+      uses: actions/setup-python@v7.1.0
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: ${{ inputs.cache-pip }}
+        cache-dependency-path: |
+          backend/requirements.txt
+          tests/requirements.txt
+
+    - name: Instalar dependencias de Python
+      shell: bash
+      run: python -m pip install -r backend/requirements.txt -r tests/requirements.txt
+
+    - name: Generar la clave de Django de esta corrida
+      shell: bash
+      run: |
+        clave="$(python -c 'import secrets; print(secrets.token_urlsafe(50))')"
+        echo "::add-mask::$clave"
+        echo "DJANGO_SECRET_KEY=$clave" >> "$GITHUB_ENV"
+
+    # El contenedor de MySQL crea el usuario con permisos solo sobre MYSQL_DATABASE;
+    # pytest-django también necesita la base temporal test_registraduria, como en local.
+    # Se hace con PyMySQL y no con "docker exec" porque dentro de un contenedor no hay docker.
+    - name: Dar permisos sobre la base de pruebas
+      shell: bash
+      run: |
+        python - <<'PY'
+        import os
+        import pymysql
+
+        conexion = pymysql.connect(
+            host=os.environ['MYSQL_HOST'], port=int(os.environ['MYSQL_PORT']),
+            user='root', password=os.environ['MYSQL_ROOT_PASSWORD'],
+        )
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"GRANT ALL PRIVILEGES ON `test_{os.environ['MYSQL_DATABASE']}`.* TO %s@'%%'",
+                (os.environ['MYSQL_USER'],),
+            )
+        conexion.close()
+        print('Permisos sobre la base de pruebas concedidos')
+        PY

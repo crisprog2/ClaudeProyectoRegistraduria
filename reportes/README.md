@@ -2,7 +2,7 @@
 
 Genera un solo reporte con todas las suites de pruebas de ConsultaVoto: backend (white-box), API, BDD y E2E. Usa [Allure 3](https://allurereport.org/docs/v3/), que funciona con Node y no necesita Java.
 
-Cómo correrlo: README de la raíz, paso 9 de "Ejecución".
+Cómo correrlo: README de la raíz, paso 9 de "Ejecución". En el CI se genera en cada corrida y se publica como artefacto `reporte-allure`.
 
 | Archivo | Para qué sirve |
 |---|---|
@@ -11,5 +11,6 @@ Cómo correrlo: README de la raíz, paso 9 de "Ejecución".
 | `preparar-resultados.mjs` | Se ejecuta antes de generar: quita las fixtures que terminaron bien y el parámetro interno de pytest-bdd |
 | `allure-results/` | Resultados que escribe pytest con `--alluredir=`. No se sube a Git |
 | `allure-report/` | Reporte generado, unos 11 MB. No se sube a Git |
+| `logs/` | Logs de los servidores que levanta `scripts/pruebas.py`. No se sube a Git |
 
 Los resultados los produce `allure-pytest`. El plugin [`tests/support/allure_reporte.py`](../tests/support/allure_reporte.py) agrupa las pruebas, registra los pasos de Gherkin y adjunta la evidencia de las pruebas que fallan.

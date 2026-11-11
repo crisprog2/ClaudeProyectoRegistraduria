@@ -32,7 +32,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
   - `tests/bdd/` — pytest-bdd, Gherkin **en español** (`# language: es`).
   - `tests/e2e/` — Playwright para Python (pytest-playwright).
 - **Reportes**: Allure 3 (`reportes/`, Node) con resultados de `allure-pytest`. Ver la sección "Reporte de Allure".
-- **CI**: GitHub Actions en `.github/workflows/ci.yml`.
+- **CI**: GitHub Actions en `.github/workflows/ci.yml`, que llama a `scripts/pruebas.py`. Ver la sección "Integración continua".
 
 ## Diseño (Figma)
 
@@ -164,7 +164,7 @@ Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backen
 
 ## Reporte de Allure
 
-Un solo reporte de las cuatro suites; por ahora solo se genera en local (el CI todavía no existe). Comandos en el README, paso 9.
+Un solo reporte de las cuatro suites. Se genera en local (README, paso 9) y en cada corrida del CI, como artefacto descargable (`reporte-allure`, unos 4 MB con los tres navegadores).
 - **Por qué Allure 3:** funciona con Node y no exige Java, que no está instalado. Va en `reportes/`, con su propio `package.json` y su lock (`allure` 3.33.0), separado del frontend. Configuración en `reportes/allurerc.mjs`: idioma español, agrupación por `parentSuite`/`suite`/`subSuite` y etiquetas `host` y `thread` ocultas, porque muestran el nombre del equipo.
 - **Solo `allure-pytest` (2.16.2), en los dos `requirements.txt`:** no se usa `allure-pytest-bdd` porque los dos registran `--alluredir` y pytest no arranca si están instalados juntos. Eso rompería también el backend, que comparte el `.venv`. Los pasos de Gherkin se registran con los hooks de pytest-bdd.
 - **Plugin `tests/support/allure_reporte.py`**, registrado con `pytest_plugins` en `tests/conftest.py`:
@@ -179,6 +179,25 @@ Un solo reporte de las cuatro suites; por ahora solo se genera en local (el CI t
 - **Visor:** `allure open` escucha por defecto en todas las interfaces de red; el script lo limita a `127.0.0.1`.
 - **Verificado:** con dos pruebas temporales que fallaban a propósito, se adjuntaron la petición y la respuesta 404 en la de API, y la URL, la captura y la traza en la de interfaz. Se borraron después.
 - **Fuera de Git:** `reportes/allure-results/` y `reportes/allure-report/`. Se retiró `pytest-html`, que no se usaba.
+
+## Integración continua
+
+`.github/workflows/ci.yml` (GitHub Actions) corre en cada pull request y push a `main`, y a mano (`workflow_dispatch`).
+- **Trabajos:** `backend`, `api` (API y BDD por la API), `frontend` (`npm run build`), `interfaz` (matriz chromium/firefox/webkit, `fail-fast: false`) y `reporte`. Este último junta los `allure-results-*` con `download-artifact` (`merge-multiple`), genera el reporte con `reportes/` y lo publica como artefacto `reporte-allure`, aunque haya fallas (`if: !cancelled()`).
+- **Lógica en `scripts/pruebas.py`, no en el YAML:** comandos `base`, `backend`, `api`, `interfaz` y `todo`, con `--allure`, `--limpiar-allure` y `--browser` (repetible). Levanta los servidores que necesita, espera a que respondan, los apaga siempre (en Windows cierra el árbol de procesos de npm con `taskkill /T`) y devuelve el código de pytest. Se detiene si el puerto ya está ocupado. Solo usa la biblioteca estándar y python-dotenv. Así, un futuro Jenkinsfile o el uso local llaman a lo mismo.
+- **`base` no corre solo:** carga `datos_demo` y sobrescribe esos registros, así que en local se llama a mano. En CI cada trabajo lo llama sobre un contenedor nuevo.
+- **MySQL:** servicio `mysql:8.0` por trabajo, definido una vez con un ancla YAML (`&mysql` / `*mysql`; GitHub admite anclas desde 2025-09, pero no claves de combinación). Las claves están escritas en el YAML porque solo valen en ese contenedor temporal. `services` no puede leer el contexto `env`, así que ahí van literales.
+- **`.github/actions/preparar-entorno`** (acción compuesta): instala Python con caché de pip, genera `DJANGO_SECRET_KEY` (enmascarada) y da permisos sobre `test_registraduria` conectándose como root con PyMySQL. Sin ese permiso, pytest-django no podría crear la base de pruebas.
+- **Configuración:** Python 3.11, Node 26, `DJANGO_DEBUG=true` (Swagger necesita sus estáticos). El script fija `CONSULTA_LIMITE_POR_MINUTO=1000` para el backend que levanta.
+- **Seguridad:** `permissions: contents: read`, acciones fijadas por versión exacta (`checkout` v7.0.1, `setup-python` v7.1.0, `setup-node` v7.1.0, `upload-artifact` v7.0.2, `download-artifact` v8.0.2), `concurrency` cancela la corrida anterior de la misma rama.
+- **Máquinas fijadas en `ubuntu-24.04`**, no `ubuntu-latest`: en la primera corrida (2026-11-11, PR de `feature/pipeline-ci`) `ubuntu-latest` ya era Ubuntu 26.04 ("resolute") y `playwright install --with-deps` falló con "Temporary failure resolving 'archive.ubuntu.com'" tras unos 11 minutos. Firefox y WebKit se cortaron a los 30 minutos. pip y npm sí descargaron. Fijar la versión además evita que el CI cambie de sistema sin aviso. En la segunda corrida, ya en 24.04 y con 3 reintentos, falló igual ("Temporary failure resolving 'azure.archive.ubuntu.com'") y se cortó a los 30 minutos, con GitHub reportando todo operativo. Conclusión: las máquinas no resuelven los servidores de paquetes de Ubuntu, sea cual sea la versión.
+- **Trabajos de interfaz dentro de `mcr.microsoft.com/playwright/python:v1.64.1-noble`** (imagen oficial de Playwright, misma versión que `tests/requirements.txt`): trae los navegadores y sus librerías, así que no usan `apt`. Opciones `--ipc=host` (recomendado para Chromium). Dentro del contenedor MySQL se alcanza como `mysql` (`MYSQL_HOST: mysql` en ese trabajo). Si se actualiza Playwright, hay que actualizar también la etiqueta de la imagen.
+- **Sin caché de pip en los trabajos de interfaz** (`preparar-entorno` con `cache-pip: ''`): en la tercera corrida `setup-python` instaló 3.11 en el contenedor, pero su caché ejecuta el script `pip`, cuya primera línea apunta a `/opt/hostedtoolcache`, que dentro del contenedor está montado en `/__t` ("spawn .../pip ENOENT"). Las dependencias se instalan con `python -m pip`, que no depende de ese script. Si esto fallara, la alternativa es usar el Python de la imagen.
+- **`HOME: /root` en los trabajos de interfaz:** en la cuarta corrida pasaron Chromium y WebKit, pero Firefox no arrancó ("Firefox is unable to launch if the $HOME folder isn't owned by the current user"). GitHub pone `HOME=/github/home`, de otro usuario, y el contenedor corre como root. Es la solución que indica el propio mensaje de Playwright.
+- **Permisos de la base de pruebas con PyMySQL**, no con `docker exec`: dentro de un contenedor no existe `docker`. La acción `preparar-entorno` lee la conexión de las variables `MYSQL_*` y sirve en los dos casos.
+- **Puesta en marcha (2026-11-11, cinco corridas):** 1) Ubuntu 26.04: la interfaz no pudo instalar navegadores con `apt`. 2) Ubuntu 24.04: igual. 3) Imagen de Playwright: falló la caché de pip. 4) Sin caché: pasaron Chromium y WebKit, y Firefox no arrancó por `HOME`. 5) Con `HOME: /root`: los siete trabajos pasaron (https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476). En todas, backend, API y frontend pasaron, y el trabajo `reporte` publicó `reporte-allure` aunque hubiera fallas.
+- **Confirmado en la corrida exitosa:** PyMySQL funciona con el contenedor de MySQL sin `cryptography`, en la máquina y dentro del contenedor de Playwright. Las pruebas de pantallas pequeñas pasan con las fuentes de Linux. `test_saltar_al_contenido_mueve_el_foco_sin_perder_el_resultado[webkit]` también pasó. Tiempos: backend 56 s, API 59 s, frontend 11 s, Chromium 3 min 12 s, Firefox 4 min 7 s, WebKit 3 min 2 s, reporte 21 s; unos 5 minutos en total, porque corren en paralelo.
+- **Verificado en local (Windows):** `python scripts/pruebas.py todo --allure` corrió 97 + 124 + 128 pruebas en Chromium, devolvió 0 y apagó los dos servidores. Con el puerto 8000 ocupado se detiene sin correr pruebas; con una prueba que falla devuelve 1 y apaga el servidor. El YAML se validó con PyYAML; el flujo completo solo se puede probar en GitHub.
 
 ## Frontend
 
@@ -218,7 +237,8 @@ Decisiones:
   - Un `conftest.py` por nivel (`tests/`, `tests/api/`, `tests/bdd/`, `tests/e2e/`, `backend/tests/`).
   - Datos de prueba en `tests/data/*.json`; nada de datos quemados en los tests.
   - BDD: `features/` separado de `step_defs/api/` y `step_defs/interfaz/`; los steps reutilizables de cada canal van en su `common_steps.py`.
-  - Markers declarados en `pytest.ini` (`api`, `bdd`, `e2e`, `smoke`, `regression`); `--strict-markers` activo.
+  - Markers declarados en `pytest.ini` (`api`, `bdd`, `e2e`, `smoke`); `--strict-markers` activo. `regression` se retiró: correr todo sin filtros es la regresión completa.
+  - Los pasos para correr las suites van en `scripts/pruebas.py`, no en el YAML del CI, para que local, GitHub Actions y un futuro Jenkins usen la misma lógica.
   - Reporte de Allure: un nivel nuevo de pruebas necesita su grupo (`parent_suite`) en `tests/support/allure_reporte.py` o en su `conftest.py`, y `--alluredir=` siempre va con signo igual. Los plugins de pytest propios viven en `tests/support/` y se registran con `pytest_plugins` en `tests/conftest.py`.
   - Escenarios mínimos a cubrir: solo votante, jurado en la misma mesa, jurado en otra mesa o puesto, campo vacío, formato inválido y cédula no encontrada.
 - **Configuración**: todo por variables de entorno (ver `.env.example`); nunca subir `.env`.
@@ -252,9 +272,10 @@ Decisiones:
 - ✅ Controlador de MySQL cambiado a PyMySQL, ya en `main` (commit `8694003`): Windows bloqueó mysqlclient el 2026-11-09. Explicado en el README (paso 1, "Controlador de MySQL").
 - ✅ Swagger UI y OpenAPI 3.1, en `main` desde el PR #1 (2026-11-06). `env_bool` ya usa el valor por defecto cuando la variable está vacía (antes, un `DJANGO_DEBUG=` vacío apagaba `DEBUG` y dejaba sin estilos al admin).
 - ⚠️ El Control inteligente de aplicaciones de Windows 11 está activo en el equipo del usuario. El 2026-11-09 bloqueó una vez archivos de WebKit (`JavaScriptCore.dll`, `sqlite3.dll`), y las 114 pruebas E2E de WebKit fallaron al arrancar; en las corridas siguientes no se repitió. Si WebKit falla en bloque, revisar primero los eventos 3077 del registro *Microsoft-Windows-CodeIntegrity/Operational* (comando en el README). No desactivar esa protección sin que el usuario lo decida.
-- ⚠️ Prueba posiblemente inestable: `test_saltar_al_contenido_mueve_el_foco_sin_perder_el_resultado[webkit]` falló una vez dentro de la suite completa (un elemento no quedó dentro de la ventana visible) y pasó 5 de 5 veces sola y en la corrida completa siguiente. Investigar si se repite.
+- ⚠️ Prueba posiblemente inestable: `test_saltar_al_contenido_mueve_el_foco_sin_perder_el_resultado[webkit]` falló una vez dentro de la suite completa en Windows (un elemento no quedó dentro de la ventana visible). Después pasó 5 de 5 veces sola, en la corrida completa siguiente y en el CI (Linux). Investigar si se repite.
 - ✅ Reporte de Allure local con las cuatro suites (349 pruebas), en `main` desde el PR #2 (2026-11-11).
-- ⏳ Siguiente: pipeline de CI en GitHub Actions que publique el reporte de Allure con su historial. Debe levantar el servidor con `DEBUG` activo para las pruebas de los archivos de Swagger. El marker `regression` está declarado, pero todavía no se usa.
+- ✅ Pipeline de CI en GitHub Actions y `scripts/pruebas.py`: 605 pruebas en verde en la rama `feature/pipeline-ci` (quinta corrida, 2026-11-11), con el reporte de Allure como artefacto. Badge de CI en el README. Pendiente del merge del PR (el usuario lo hace en GitHub).
+- ⏳ Siguiente: el usuario activa la regla de protección de `main` que exige el CI; luego, reporte de Allure en GitHub Pages con historial (decisión del usuario, publica una página) y cobertura de código. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)

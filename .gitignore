@@ -37,6 +37,7 @@ videos/
 report.html
 reportes/allure-results/
 reportes/allure-report/
+reportes/logs/
 
 # --- IDE / SO ---
 .vscode/

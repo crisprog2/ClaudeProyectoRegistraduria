@@ -1,4 +1,18 @@
-# Placeholder de CI. Los pasos de ejecución se completarán en la fase de implementación.
+# Integración continua de ConsultaVoto.
+#
+# Corre todas las suites en máquinas limpias de GitHub y publica el reporte de
+# Allure como artefacto descargable. La lógica de las pruebas vive en
+# scripts/pruebas.py: este archivo solo prepara la máquina y lo llama, así que
+# otra herramienta (por ejemplo, un Jenkinsfile) puede reutilizar los mismos pasos.
+#
+# Las máquinas se fijan en ubuntu-24.04 en lugar de ubuntu-latest, para que el CI no
+# cambie de sistema sin aviso. Los trabajos de interfaz corren dentro de la imagen
+# oficial de Playwright, que ya trae los navegadores y sus librerías: en las dos
+# primeras corridas (2026-11-11), "playwright install --with-deps" no pudo resolver
+# los servidores de paquetes de Ubuntu (ni en 26.04 ni en 24.04) y se quedó sin tiempo.
+#
+# No necesita secretos: la clave de Django se genera en cada corrida y las claves
+# de MySQL solo valen dentro del contenedor temporal de cada trabajo.
 name: CI
 
 on:
@@ -6,28 +20,193 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Solo lectura del repositorio: el workflow no publica nada fuera de sus artefactos.
+permissions:
+  contents: read
+
+# Una corrida nueva en la misma rama o pull request cancela la anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '26'
+  # Swagger UI necesita DEBUG activo para que Django sirva sus archivos estáticos.
+  DJANGO_DEBUG: 'true'
+  DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+  MYSQL_DATABASE: registraduria
+  MYSQL_USER: consultavoto_app
+  MYSQL_PASSWORD: clave-solo-para-ci
+  MYSQL_ROOT_PASSWORD: root-solo-para-ci
+  MYSQL_HOST: 127.0.0.1
+  MYSQL_PORT: '3306'
 
 jobs:
-  backend-tests:
-    name: Backend (pytest-django)
-    runs-on: ubuntu-latest
+  backend:
+    name: Backend (white-box)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mysql: &mysql
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root-solo-para-ci
+          MYSQL_DATABASE: registraduria
+          MYSQL_USER: consultavoto_app
+          MYSQL_PASSWORD: clave-solo-para-ci
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot-solo-para-ci"
+          --health-interval=5s --health-timeout=5s --health-retries=24
     steps:
-      - uses: actions/checkout@v4
-      - name: Pendiente
-        run: echo "Pendiente - instalar backend/requirements.txt y ejecutar pytest en backend/"
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/preparar-entorno
+      - name: Pruebas del backend
+        run: python scripts/pruebas.py backend --allure
+      - name: Guardar resultados de Allure
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-backend
+          path: reportes/allure-results
+          retention-days: 14
 
-  black-box-tests:
-    name: API, BDD y E2E
-    runs-on: ubuntu-latest
-    needs: backend-tests
-    # Pendiente: servicio MySQL (contenedor mysql:8.0, misma versión mayor que el entorno local),
-    # levantar backend y frontend antes de las pruebas.
+  api:
+    name: API y BDD por la API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      mysql: *mysql
     steps:
-      - uses: actions/checkout@v4
-      - name: Pruebas de API
-        run: echo "Pendiente - pytest -m api"
-      - name: Pruebas BDD
-        run: echo "Pendiente - pytest -m bdd"
-      - name: Pruebas E2E
-        run: echo "Pendiente - playwright install y pytest -m e2e"
-      # Pendiente: generar el reporte de Allure (reportes/) y publicarlo como artefacto, con trazas de Playwright.
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/preparar-entorno
+      - name: Migraciones y datos de demostración
+        run: python scripts/pruebas.py base
+      - name: Pruebas de API y BDD por la API
+        run: python scripts/pruebas.py api --allure
+      - name: Guardar resultados de Allure
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-api
+          path: reportes/allure-results
+          retention-days: 14
+      - name: Guardar log del servidor
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: logs-api
+          path: reportes/logs
+          retention-days: 14
+
+  frontend:
+    name: Frontend (build)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias
+        working-directory: frontend
+        run: npm ci
+      - name: Compilar
+        working-directory: frontend
+        run: npm run build
+
+  interfaz:
+    name: Interfaz (${{ matrix.navegador }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      # Si un navegador falla, los otros terminan igual para ver todos los errores.
+      fail-fast: false
+      matrix:
+        navegador: [chromium, firefox, webkit]
+    # La imagen trae Chromium, Firefox y WebKit de Playwright 1.64.1 (la versión de
+    # tests/requirements.txt) con sus librerías del sistema: no hace falta apt.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+      # Recomendado por Playwright: evita que Chromium se quede sin memoria compartida.
+      options: --ipc=host
+    env:
+      # Dentro de un contenedor, el servicio de MySQL se alcanza por su nombre.
+      MYSQL_HOST: mysql
+      # GitHub pone HOME=/github/home, de otro usuario, y el contenedor corre como root:
+      # Firefox se niega a arrancar si HOME no pertenece al usuario actual.
+      HOME: /root
+    services:
+      mysql: *mysql
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: ./.github/actions/preparar-entorno
+        with:
+          # Dentro del contenedor la caché de pip falla: ver preparar-entorno.
+          cache-pip: ''
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependencias del frontend
+        working-directory: frontend
+        run: npm ci
+      - name: Migraciones y datos de demostración
+        run: python scripts/pruebas.py base
+      - name: Pruebas de interfaz (BDD y E2E)
+        run: python scripts/pruebas.py interfaz --browser ${{ matrix.navegador }} --allure
+      - name: Guardar resultados de Allure
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: allure-results-interfaz-${{ matrix.navegador }}
+          path: reportes/allure-results
+          retention-days: 14
+      - name: Guardar logs y trazas de Playwright
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: logs-interfaz-${{ matrix.navegador }}
+          path: |
+            reportes/logs
+            test-results
+          retention-days: 14
+
+  reporte:
+    name: Reporte de Allure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    # Se genera aunque alguna suite falle: es justo cuando más se necesita.
+    needs: [backend, api, interfaz]
+    if: ${{ !cancelled() }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: reportes/package-lock.json
+      - name: Reunir los resultados de todas las suites
+        uses: actions/download-artifact@v8.0.2
+        with:
+          pattern: allure-results-*
+          path: reportes/allure-results
+          merge-multiple: true
+      - name: Instalar Allure
+        working-directory: reportes
+        run: npm ci
+      - name: Generar el reporte
+        working-directory: reportes
+        run: npm run generar
+      - name: Publicar el reporte como artefacto
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: reporte-allure
+          path: reportes/allure-report
+          retention-days: 30
