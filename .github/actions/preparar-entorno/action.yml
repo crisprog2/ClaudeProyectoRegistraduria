@@ -1,0 +1,45 @@
+# Pasos comunes de los trabajos que usan Python y MySQL en .github/workflows/ci.yml.
+name: Preparar entorno de pruebas
+description: >-
+  Instala Python con las dependencias fijadas, genera una clave de Django solo
+  para esta corrida y da permisos sobre la base de pruebas al usuario de MySQL.
+
+inputs:
+  contenedor-mysql:
+    description: ID del contenedor del servicio MySQL (job.services.mysql.id).
+    required: true
+  clave-root-mysql:
+    description: Clave de root del contenedor; solo existe durante la corrida.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Instalar Python
+      uses: actions/setup-python@v7.1.0
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+        cache: pip
+        cache-dependency-path: |
+          backend/requirements.txt
+          tests/requirements.txt
+
+    - name: Instalar dependencias de Python
+      shell: bash
+      run: python -m pip install -r backend/requirements.txt -r tests/requirements.txt
+
+    - name: Generar la clave de Django de esta corrida
+      shell: bash
+      run: |
+        clave="$(python -c 'import secrets; print(secrets.token_urlsafe(50))')"
+        echo "::add-mask::$clave"
+        echo "DJANGO_SECRET_KEY=$clave" >> "$GITHUB_ENV"
+
+    # El contenedor crea el usuario con permisos solo sobre MYSQL_DATABASE; pytest-django
+    # también necesita la base temporal test_registraduria, como en el entorno local.
+    - name: Dar permisos sobre la base de pruebas
+      shell: bash
+      run: >-
+        docker exec ${{ inputs.contenedor-mysql }}
+        mysql -uroot -p"${{ inputs.clave-root-mysql }}"
+        -e "GRANT ALL PRIVILEGES ON test_${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';"

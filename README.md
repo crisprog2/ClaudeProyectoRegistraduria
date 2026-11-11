@@ -139,14 +139,18 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 - **Pruebas de mutación**: las reglas de negocio y de seguridad se comprobaron reintroduciendo el defecto.
 - **`conftest.py` por nivel** para aislar fixtures.
 - **Datos de prueba externos** en `tests/data/`, nunca quemados en los tests.
-- **Markers** (`api`, `bdd`, `e2e`, `smoke`, `regression`) para ejecutar suites selectivas.
+- **Markers** (`api`, `bdd`, `e2e`, `smoke`) para ejecutar suites selectivas. Correr todo sin filtros es la regresión completa.
+- **Integración continua** con GitHub Actions: todas las suites en cada pull request, con la lógica en un script reutilizable.
 - **Un solo reporte de Allure** con los cuatro niveles. Los escenarios BDD muestran cada paso de Gherkin, y las pruebas fallidas adjuntan su evidencia: la petición y la respuesta de la API o la captura y la traza de Playwright.
 
 ## Estructura del proyecto
 
 ```
 .
-├── .github/workflows/ci.yml   # Pipeline de CI (placeholder)
+├── .github/
+│   ├── workflows/ci.yml       # Pipeline de CI (GitHub Actions)
+│   └── actions/preparar-entorno/  # Pasos comunes del CI: Python, clave de Django y permisos de MySQL
+├── scripts/pruebas.py         # Corre las suites levantando y apagando los servidores (local y CI)
 ├── backend/                   # API Django + DRF
 │   ├── config/                # Proyecto Django y settings por entorno
 │   ├── apps/consultas/        # App de dominio: modelos, admin, validadores, servicios, vistas, documentación OpenAPI
@@ -196,7 +200,29 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Reporte de Allure con todas las suites (local) | ✅ |
-| Pipeline de CI | 🚧 Placeholder |
+| Pipeline de CI en GitHub Actions (todas las suites y reporte de Allure) | 🧪 Implementado; falta su primera corrida en GitHub |
+
+## Integración continua (CI)
+
+GitHub Actions corre todas las suites en máquinas limpias en cada pull request hacia `main`, en cada push a `main` y a mano desde la pestaña Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+
+```
+                ┌─ Backend: 97 pruebas, MySQL 8.0 en contenedor
+Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el backend levantado
+                ├─ Frontend: npm run build
+                └─ Interfaz × 3 navegadores en paralelo: 128 pruebas en cada uno
+                                   │
+                                   ▼
+                    Reporte de Allure con todos los resultados
+```
+
+- **Misma lógica en todos lados:** cada trabajo prepara la máquina y llama a [`scripts/pruebas.py`](scripts/pruebas.py), el mismo script que se usa en local (paso 7). Otra herramienta de CI, como Jenkins, podría reutilizarlo con su propio archivo.
+- **Base de datos:** cada trabajo usa un contenedor `mysql:8.0` nuevo, con un usuario sin permisos de administrador y los datos de demostración.
+- **Sin secretos:** la clave de Django se genera en cada corrida y las claves de MySQL solo valen dentro del contenedor temporal.
+- **Navegadores:** cada uno corre por separado, y si uno falla los otros terminan igual.
+- **Reporte:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
+- **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
+- **Seguridad:** permisos de solo lectura, acciones de GitHub fijadas por versión exacta, y una corrida nueva cancela la anterior de la misma rama.
 
 ## Ejecución
 
@@ -287,7 +313,21 @@ pytest-django crea la base `test_registraduria`, carga los datos de demostració
 
 ### 7. Pruebas black-box: API, BDD y E2E
 
-Se ejecutan contra la aplicación en marcha y con los datos de demostración cargados. Hacen muchas peticiones seguidas, así que el backend se levanta con un límite de consultas alto. En una terminal:
+**Con un solo comando.** [`scripts/pruebas.py`](scripts/pruebas.py) levanta el backend (y el frontend, si hace falta), corre las pruebas y apaga los servidores al terminar, aunque algo falle. Es el mismo script que usa el CI:
+
+```powershell
+python scripts/pruebas.py api                          # API y BDD por la API
+python scripts/pruebas.py interfaz                     # BDD por la interfaz y E2E en Chromium
+python scripts/pruebas.py interfaz --browser firefox --browser webkit
+python scripts/pruebas.py todo                         # backend, API e interfaz seguidos
+python scripts/pruebas.py todo --allure                # además guarda resultados para el reporte (paso 9)
+```
+
+- **Puertos libres:** el script se detiene si ya hay un servidor en el puerto 8000 o 5173, porque correría las pruebas contra él. Por ejemplo, un backend con el límite normal de consultas daría error 429.
+- **Logs de los servidores:** quedan en `reportes/logs/`.
+- **Base de datos:** el script no la prepara. En tu equipo usa la del paso 4; `python scripts/pruebas.py base` aplica las migraciones y vuelve a cargar los datos de demostración, sobrescribiendo esos registros.
+
+**A mano, en tres terminales.** Útil para dejar los servidores corriendo mientras pruebas. Las pruebas se ejecutan contra la aplicación en marcha y con los datos de demostración cargados. Hacen muchas peticiones seguidas, así que el backend se levanta con un límite de consultas alto. En una terminal:
 
 ```powershell
 $env:CONSULTA_LIMITE_POR_MINUTO = "1000"
@@ -366,7 +406,15 @@ cd reportes
 npm ci
 ```
 
-Cada reporte se arma en tres pasos. El paso 2 necesita el backend y el frontend corriendo, como en el paso 7:
+Cada reporte se arma en tres pasos. Con el script del paso 7, los dos primeros son un solo comando, y no necesitas los servidores corriendo:
+
+```powershell
+python scripts/pruebas.py todo --allure    # backend, API e interfaz; vacía los resultados anteriores
+cd reportes
+npm run reporte                            # generar y abrir
+```
+
+A mano, el paso 2 necesita el backend y el frontend corriendo, como en el paso 7:
 
 ```powershell
 # 1. Pruebas del backend; --clean-alluredir vacía los resultados de la corrida anterior
@@ -389,10 +437,14 @@ npm run reporte
 - **Antes de generar:** `npm run reporte` quita las fixtures que terminaron bien (unas 20 por prueba, de pytest-django y Playwright) y el parámetro interno de pytest-bdd. Las fixtures que fallaron se conservan.
 - **Visor local:** el reporte se abre en `127.0.0.1` y no queda visible en la red. `npm run generar` solo lo genera, y `npm run abrir` lo abre después.
 - **Fuera de Git:** los resultados (`reportes/allure-results/`) y el reporte (`reportes/allure-report/`, unos 11 MB) no se suben.
+- **En el CI:** el reporte se genera en cada corrida y se descarga como artefacto (ver "Integración continua").
 
 ### Pendiente
 
-- Pipeline de CI, con el reporte de Allure publicado y su historial
+- Primera corrida del CI en GitHub y, cuando esté estable, exigir que pase antes de hacer merge a `main` (regla de protección de la rama)
+- Publicar el reporte de Allure en GitHub Pages, con historial y tendencias
+- Cobertura de código
+- Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
 
 ## Aviso
 
