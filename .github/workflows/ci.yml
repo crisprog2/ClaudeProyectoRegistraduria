@@ -5,9 +5,11 @@
 # scripts/pruebas.py: este archivo solo prepara la máquina y lo llama, así que
 # otra herramienta (por ejemplo, un Jenkinsfile) puede reutilizar los mismos pasos.
 #
-# Las máquinas se fijan en ubuntu-24.04 en lugar de ubuntu-latest: el CI no cambia
-# de sistema sin aviso, y en la primera corrida (2026-11-11) la imagen de Ubuntu 26.04
-# no pudo resolver los servidores de paquetes de Ubuntu al instalar los navegadores.
+# Las máquinas se fijan en ubuntu-24.04 en lugar de ubuntu-latest, para que el CI no
+# cambie de sistema sin aviso. Los trabajos de interfaz corren dentro de la imagen
+# oficial de Playwright, que ya trae los navegadores y sus librerías: en las dos
+# primeras corridas (2026-11-11), "playwright install --with-deps" no pudo resolver
+# los servidores de paquetes de Ubuntu (ni en 26.04 ni en 24.04) y se quedó sin tiempo.
 #
 # No necesita secretos: la clave de Django se genera en cada corrida y las claves
 # de MySQL solo valen dentro del contenedor temporal de cada trabajo.
@@ -62,9 +64,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/preparar-entorno
-        with:
-          contenedor-mysql: ${{ job.services.mysql.id }}
-          clave-root-mysql: ${{ env.MYSQL_ROOT_PASSWORD }}
       - name: Pruebas del backend
         run: python scripts/pruebas.py backend --allure
       - name: Guardar resultados de Allure
@@ -84,9 +83,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/preparar-entorno
-        with:
-          contenedor-mysql: ${{ job.services.mysql.id }}
-          clave-root-mysql: ${{ env.MYSQL_ROOT_PASSWORD }}
       - name: Migraciones y datos de demostración
         run: python scripts/pruebas.py base
       - name: Pruebas de API y BDD por la API
@@ -133,14 +129,20 @@ jobs:
       fail-fast: false
       matrix:
         navegador: [chromium, firefox, webkit]
+    # La imagen trae Chromium, Firefox y WebKit de Playwright 1.64.1 (la versión de
+    # tests/requirements.txt) con sus librerías del sistema: no hace falta apt.
+    container:
+      image: mcr.microsoft.com/playwright/python:v1.64.1-noble
+      # Recomendado por Playwright: evita que Chromium se quede sin memoria compartida.
+      options: --ipc=host
+    env:
+      # Dentro de un contenedor, el servicio de MySQL se alcanza por su nombre.
+      MYSQL_HOST: mysql
     services:
       mysql: *mysql
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/preparar-entorno
-        with:
-          contenedor-mysql: ${{ job.services.mysql.id }}
-          clave-root-mysql: ${{ env.MYSQL_ROOT_PASSWORD }}
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
@@ -149,15 +151,6 @@ jobs:
       - name: Instalar dependencias del frontend
         working-directory: frontend
         run: npm ci
-      # Descarga paquetes de Ubuntu con apt: se reintenta por si la red falla un momento.
-      - name: Instalar ${{ matrix.navegador }} y sus dependencias del sistema
-        run: |
-          for intento in 1 2 3; do
-            python -m playwright install --with-deps ${{ matrix.navegador }} && exit 0
-            echo "Falló el intento $intento; reintentando en 30 s"
-            sleep 30
-          done
-          exit 1
       - name: Migraciones y datos de demostración
         run: python scripts/pruebas.py base
       - name: Pruebas de interfaz (BDD y E2E)

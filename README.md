@@ -220,7 +220,8 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Base de datos:** cada trabajo usa un contenedor `mysql:8.0` nuevo, con un usuario sin permisos de administrador y los datos de demostración.
 - **Sin secretos:** la clave de Django se genera en cada corrida y las claves de MySQL solo valen dentro del contenedor temporal.
 - **Navegadores:** cada uno corre por separado, y si uno falla los otros terminan igual.
-- **Sistema fijo:** las máquinas usan Ubuntu 24.04 en lugar de `ubuntu-latest`, para que el CI no cambie de sistema sin aviso. En Ubuntu 26.04 la instalación de los navegadores falló por un problema de red de la imagen. Esa instalación se reintenta hasta 3 veces.
+- **Sistema fijo:** las máquinas usan Ubuntu 24.04 en lugar de `ubuntu-latest`, para que el CI no cambie de sistema sin aviso.
+- **Navegadores ya instalados:** los trabajos de interfaz corren dentro de la imagen oficial de Playwright (`mcr.microsoft.com/playwright/python:v1.64.1-noble`), que trae los navegadores y sus librerías. En las primeras corridas, instalarlos con `apt` falló porque las máquinas no lograban conectarse a los servidores de paquetes de Ubuntu.
 - **Reporte:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
 - **Seguridad:** permisos de solo lectura, acciones de GitHub fijadas por versión exacta, y una corrida nueva cancela la anterior de la misma rama.

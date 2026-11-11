@@ -3,14 +3,8 @@ name: Preparar entorno de pruebas
 description: >-
   Instala Python con las dependencias fijadas, genera una clave de Django solo
   para esta corrida y da permisos sobre la base de pruebas al usuario de MySQL.
-
-inputs:
-  contenedor-mysql:
-    description: ID del contenedor del servicio MySQL (job.services.mysql.id).
-    required: true
-  clave-root-mysql:
-    description: Clave de root del contenedor; solo existe durante la corrida.
-    required: true
+  Lee la conexión de las variables MYSQL_* del workflow, así que sirve igual en
+  la máquina de GitHub y dentro de un contenedor (los trabajos de interfaz).
 
 runs:
   using: composite
@@ -35,11 +29,25 @@ runs:
         echo "::add-mask::$clave"
         echo "DJANGO_SECRET_KEY=$clave" >> "$GITHUB_ENV"
 
-    # El contenedor crea el usuario con permisos solo sobre MYSQL_DATABASE; pytest-django
-    # también necesita la base temporal test_registraduria, como en el entorno local.
+    # El contenedor de MySQL crea el usuario con permisos solo sobre MYSQL_DATABASE;
+    # pytest-django también necesita la base temporal test_registraduria, como en local.
+    # Se hace con PyMySQL y no con "docker exec" porque dentro de un contenedor no hay docker.
     - name: Dar permisos sobre la base de pruebas
       shell: bash
-      run: >-
-        docker exec ${{ inputs.contenedor-mysql }}
-        mysql -uroot -p"${{ inputs.clave-root-mysql }}"
-        -e "GRANT ALL PRIVILEGES ON test_${MYSQL_DATABASE}.* TO '${MYSQL_USER}'@'%';"
+      run: |
+        python - <<'PY'
+        import os
+        import pymysql
+
+        conexion = pymysql.connect(
+            host=os.environ['MYSQL_HOST'], port=int(os.environ['MYSQL_PORT']),
+            user='root', password=os.environ['MYSQL_ROOT_PASSWORD'],
+        )
+        with conexion.cursor() as cursor:
+            cursor.execute(
+                f"GRANT ALL PRIVILEGES ON `test_{os.environ['MYSQL_DATABASE']}`.* TO %s@'%%'",
+                (os.environ['MYSQL_USER'],),
+            )
+        conexion.close()
+        print('Permisos sobre la base de pruebas concedidos')
+        PY
