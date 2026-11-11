@@ -143,6 +143,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/preparar-entorno
+        with:
+          # Dentro del contenedor la caché de pip falla: ver preparar-entorno.
+          cache-pip: ''
       - uses: actions/setup-node@v7.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}

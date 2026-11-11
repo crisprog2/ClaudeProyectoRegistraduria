@@ -6,6 +6,16 @@ description: >-
   Lee la conexión de las variables MYSQL_* del workflow, así que sirve igual en
   la máquina de GitHub y dentro de un contenedor (los trabajos de interfaz).
 
+inputs:
+  cache-pip:
+    description: >-
+      Caché de setup-python: "pip" o vacío para desactivarla. Dentro de un contenedor
+      debe ir vacía: setup-python ejecuta el script pip, cuya primera línea apunta a la
+      ruta de Python en la máquina (/opt/hostedtoolcache), que en el contenedor está en
+      /__t y no existe ("spawn .../pip ENOENT").
+    required: false
+    default: pip
+
 runs:
   using: composite
   steps:
@@ -13,7 +23,7 @@ runs:
       uses: actions/setup-python@v7.1.0
       with:
         python-version: ${{ env.PYTHON_VERSION }}
-        cache: pip
+        cache: ${{ inputs.cache-pip }}
         cache-dependency-path: |
           backend/requirements.txt
           tests/requirements.txt
