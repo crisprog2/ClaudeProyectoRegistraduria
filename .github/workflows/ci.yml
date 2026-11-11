@@ -138,6 +138,9 @@ jobs:
     env:
       # Dentro de un contenedor, el servicio de MySQL se alcanza por su nombre.
       MYSQL_HOST: mysql
+      # GitHub pone HOME=/github/home, de otro usuario, y el contenedor corre como root:
+      # Firefox se niega a arrancar si HOME no pertenece al usuario actual.
+      HOME: /root
     services:
       mysql: *mysql
     steps:
