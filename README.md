@@ -203,6 +203,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Reporte de Allure con todas las suites (local) | ✅ |
 | Pipeline de CI en GitHub Actions: 605 pruebas en tres navegadores y reporte de Allure | ✅ |
+| Rama `main` protegida: solo admite cambios por pull request con el CI en verde | ✅ |
 
 ## Integración continua (CI)
 
@@ -228,6 +229,8 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
 - **Seguridad:** permisos de solo lectura, acciones de GitHub fijadas por versión exacta, y una corrida nueva cancela la anterior de la misma rama.
 - **Resultado:** cada corrida ejecuta 605 pruebas: 97 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
+- **`main` protegida:** no admite cambios directos. Todo cambio llega por pull request, y el merge solo es posible si pasan los seis trabajos de pruebas (backend, API, frontend y los tres navegadores) con la rama al día. Tampoco se puede borrar `main` ni reescribir su historial.
+- **Flujo de un cambio:** crear una rama desde `main` → subirla y abrir un pull request → el CI corre solo → si todo pasa, se hace el merge.
 - **Ajustes de la primera puesta en marcha:** las primeras corridas fallaron por el entorno de GitHub, no por el código. Las máquinas no podían descargar paquetes de Ubuntu (de ahí la imagen de Playwright), la caché de pip no funcionaba dentro del contenedor y Firefox no arrancaba porque `HOME` pertenecía a otro usuario. Los detalles están en `CLAUDE.md`.
 
 ## Ejecución
@@ -447,7 +450,6 @@ npm run reporte
 
 ### Pendiente
 
-- Exigir que el CI pase antes de hacer merge a `main` (regla de protección de la rama, que se activa en GitHub)
 - Publicar el reporte de Allure en GitHub Pages, con historial y tendencias
 - Cobertura de código
 - Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
