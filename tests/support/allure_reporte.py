@@ -148,16 +148,20 @@ def _version(paquete):
 
 
 def pytest_sessionfinish(session):
-    """Escribe environment.properties en la carpeta de resultados de Allure."""
+    """
+    Escribe environment.properties en la carpeta de resultados de Allure.
+
+    No incluye los navegadores: en el CI cada trabajo corre uno y escribe su propio
+    archivo, y al juntar los resultados solo queda el último, lo que mostraba un solo
+    navegador. Cada prueba de interfaz ya lleva su navegador como parámetro.
+    """
     carpeta = session.config.getoption('--alluredir', default=None)
     if not carpeta:
         return
-    navegadores = session.config.getoption('--browser', default=None) or ['chromium']
     datos = {
         'Python': platform.python_version(),
         'Sistema': f'{platform.system()} {platform.version()}',
         **{paquete: _version(paquete) for paquete in PAQUETES_DEL_ENTORNO},
-        'Navegadores': ', '.join(navegadores),
         'API': config.API_BASE_URL,
         'Frontend': config.FRONTEND_BASE_URL,
     }
