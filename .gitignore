@@ -38,6 +38,7 @@ report.html
 reportes/allure-results/
 reportes/allure-report/
 reportes/logs/
+reportes/historial/
 
 # --- IDE / SO ---
 .vscode/

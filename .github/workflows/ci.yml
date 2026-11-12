@@ -11,6 +11,10 @@
 # primeras corridas (2026-11-11), "playwright install --with-deps" no pudo resolver
 # los servidores de paquetes de Ubuntu (ni en 26.04 ni en 24.04) y se quedó sin tiempo.
 #
+# En cada push a main, el reporte de Allure se publica en GitHub Pages con su historial
+# (https://crisprog2.github.io/ClaudeProyectoRegistraduria/). El historial vive en la
+# propia página: se descarga antes de generar el reporte y se vuelve a publicar con él.
+#
 # No necesita secretos: la clave de Django se genera en cada corrida y las claves
 # de MySQL solo valen dentro del contenedor temporal de cada trabajo.
 name: CI
@@ -22,17 +26,20 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Solo lectura del repositorio: el workflow no publica nada fuera de sus artefactos.
+# Solo lectura del repositorio. Únicamente el trabajo "publicar" pide permisos para Pages.
 permissions:
   contents: read
 
-# Una corrida nueva en la misma rama o pull request cancela la anterior.
+# En una rama de pull request, una corrida nueva cancela la anterior. En main no: cada
+# merge espera su turno, para no cortar una publicación ni perder un punto del historial.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 env:
   PYTHON_VERSION: '3.11'
+  # Dirección pública del reporte: https://<dueño>.github.io/<repositorio>
+  URL_PAGES: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
   NODE_VERSION: '26'
   # Swagger UI necesita DEBUG activo para que Django sirva sus archivos estáticos.
   DJANGO_DEBUG: 'true'
@@ -201,12 +208,52 @@ jobs:
       - name: Instalar Allure
         working-directory: reportes
         run: npm ci
+      # Solo en main: los pull requests generan su reporte sin tocar el historial publicado.
+      - name: Descargar el historial publicado
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          mkdir -p reportes/historial
+          if curl -fsSL --retry 2 "$URL_PAGES/historial/history.jsonl" -o reportes/historial/history.jsonl; then
+            echo "Historial descargado: $(wc -l < reportes/historial/history.jsonl) corridas anteriores"
+          else
+            rm -f reportes/historial/history.jsonl
+            echo "::notice::No hay historial publicado todavía; el reporte empieza uno nuevo."
+          fi
       - name: Generar el reporte
         working-directory: reportes
         run: npm run generar
+      - name: Incluir el historial en el sitio
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          mkdir -p reportes/allure-report/historial
+          cp reportes/historial/history.jsonl reportes/allure-report/historial/
       - name: Publicar el reporte como artefacto
         uses: actions/upload-artifact@v7.0.2
         with:
           name: reporte-allure
           path: reportes/allure-report
           retention-days: 30
+      - name: Preparar el sitio de GitHub Pages
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: reportes/allure-report
+
+  publicar:
+    name: Publicar en GitHub Pages
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    needs: reporte
+    # Se publica aunque alguna suite falle: el historial también debe registrar las fallas.
+    if: ${{ !cancelled() && needs.reporte.result == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    # Permisos mínimos para desplegar en Pages; los demás trabajos siguen en solo lectura.
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Desplegar el reporte
+        id: despliegue
+        uses: actions/deploy-pages@v5.0.1

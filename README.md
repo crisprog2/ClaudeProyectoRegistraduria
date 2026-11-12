@@ -1,6 +1,7 @@
 # ConsultaVoto — Proyecto de portafolio QA
 
 [![CI](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml/badge.svg)](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml)
+[![Reporte de pruebas](https://img.shields.io/badge/reporte-Allure-orange)](https://crisprog2.github.io/ClaudeProyectoRegistraduria/)
 
 > ⚠️ **Proyecto ficticio de demostración.** ConsultaVoto no es un sitio oficial ni está conectado a ningún registro electoral real. Todos los nombres, cédulas, puestos y mesas son datos inventados.
 
@@ -204,6 +205,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Reporte de Allure con todas las suites (local) | ✅ |
 | Pipeline de CI en GitHub Actions: 605 pruebas en tres navegadores y reporte de Allure | ✅ |
 | Rama `main` protegida: solo admite cambios por pull request con el CI en verde | ✅ |
+| Reporte de Allure publicado en GitHub Pages, con historial de las últimas 30 corridas | ✅ [https://crisprog2.github.io/ClaudeProyectoRegistraduria/](https://crisprog2.github.io/ClaudeProyectoRegistraduria/) |
 
 ## Integración continua (CI)
 
@@ -225,9 +227,11 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Navegadores:** cada uno corre por separado, y si uno falla los otros terminan igual.
 - **Sistema fijo:** las máquinas usan Ubuntu 24.04 en lugar de `ubuntu-latest`, para que el CI no cambie de sistema sin aviso.
 - **Navegadores ya instalados:** los trabajos de interfaz corren dentro de la imagen oficial de Playwright (`mcr.microsoft.com/playwright/python:v1.64.1-noble`), que trae los navegadores y sus librerías. En las primeras corridas, instalarlos con `apt` falló porque las máquinas no lograban conectarse a los servidores de paquetes de Ubuntu.
-- **Reporte:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
+- **Reporte publicado:** cada push a `main` publica el reporte de Allure en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, aunque alguna prueba falle. En **Report ▾ → Gráficas** se ven las tendencias de las últimas 30 corridas: estado, duración y estabilidad. Cada prueba también muestra su propio historial.
+- **Historial:** se guarda en la propia página (`historial/history.jsonl`). Antes de generar el reporte, el CI lo descarga, agrega la corrida nueva y lo vuelve a publicar. Si la página no responde, el reporte se genera igual, sin historial. Los pull requests no tocan el historial publicado.
+- **Reporte de cada corrida:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
-- **Seguridad:** permisos de solo lectura, acciones de GitHub fijadas por versión exacta, y una corrida nueva cancela la anterior de la misma rama.
+- **Seguridad:** permisos de solo lectura; solo el trabajo `publicar` puede escribir en Pages. Las acciones de GitHub están fijadas por versión exacta. En las ramas de pull request, una corrida nueva cancela la anterior; en `main`, cada merge espera su turno para no cortar una publicación.
 - **Resultado:** cada corrida ejecuta 605 pruebas: 97 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
 - **`main` protegida:** no admite cambios directos. Todo cambio llega por pull request, y el merge solo es posible si pasan los seis trabajos de pruebas (backend, API, frontend y los tres navegadores) con la rama al día. Tampoco se puede borrar `main` ni reescribir su historial.
 - **Flujo de un cambio:** crear una rama desde `main` → subirla y abrir un pull request → el CI corre solo → si todo pasa, se hace el merge.
@@ -445,12 +449,12 @@ npm run reporte
 - **Evidencia de las pruebas que fallan:** en las de API, la petición y la respuesta. En las de interfaz, la URL, una captura de la página y la traza de Playwright, que se abre en https://trace.playwright.dev. La traza solo se guarda con `--tracing retain-on-failure`, que hace la corrida un poco más lenta: en Chromium pasó de unos 60 a unos 80 segundos. Para varios navegadores, agrega `--browser firefox --browser webkit` al paso 2.
 - **Antes de generar:** `npm run reporte` quita las fixtures que terminaron bien (unas 20 por prueba, de pytest-django y Playwright) y el parámetro interno de pytest-bdd. Las fixtures que fallaron se conservan.
 - **Visor local:** el reporte se abre en `127.0.0.1` y no queda visible en la red. `npm run generar` solo lo genera, y `npm run abrir` lo abre después.
+- **Historial local:** cada `npm run generar` agrega la corrida a `reportes/historial/history.jsonl`, que queda fuera de Git y guarda las últimas 30. Las tendencias se ven en **Report ▾ → Gráficas**. Para empezar de cero, borra esa carpeta.
 - **Fuera de Git:** los resultados (`reportes/allure-results/`) y el reporte (`reportes/allure-report/`, unos 11 MB) no se suben.
-- **En el CI:** el reporte se genera en cada corrida y se descarga como artefacto (ver "Integración continua").
+- **En el CI:** el reporte se genera en cada corrida y se descarga como artefacto. El de `main` además se publica en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con su historial (ver "Integración continua").
 
 ### Pendiente
 
-- Publicar el reporte de Allure en GitHub Pages, con historial y tendencias
 - Cobertura de código
 - Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
 
