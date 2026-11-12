@@ -140,7 +140,7 @@ Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke
 - Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite. También se detectan en la documentación: campo sin documentar, tipo distinto del real, código o ejemplo faltante, ejemplo desactualizado, mensaje cambiado, Swagger desde un CDN, nombre de la entidad real, sin aviso de datos ficticios y sin `Retry-After`.
 - El fixture `api` (cliente compartido por API y BDD) está en `tests/conftest.py`. Si no hay servidor, detiene la corrida con instrucciones.
 
-Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 casos por canal, 6 también `@smoke`): 3 features en lenguaje de negocio, sin HTTP ni pantallas. Los mismos features se ejecutan por dos canales: `step_defs/api/` (marker `api`) y `step_defs/interfaz/` (marker `e2e`). Cada carpeta tiene su `conftest.py` y su `common_steps.py`, porque los textos de los steps son iguales y sus implementaciones no deben mezclarse.
+Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 escenarios por la API y 14 por la interfaz en cada navegador, 6 también `@smoke`): 3 features en lenguaje de negocio, sin HTTP ni pantallas. Los mismos features se ejecutan por dos canales: `step_defs/api/` (marker `api`) y `step_defs/interfaz/` (marker `e2e`). Cada carpeta tiene su `conftest.py` y su `common_steps.py`, porque los textos de los steps son iguales y sus implementaciones no deben mezclarse.
 - `consulta_lugar_votacion.feature`: solo votante y cédula con espacios externos.
 - `consulta_jurado.feature`: jurado en la misma mesa, en otra mesa del mismo puesto y en otro puesto.
 - `validaciones_cedula.feature`: sin cédula, esquema de formato inválido (7 ejemplos) y no registrada.
@@ -149,6 +149,23 @@ Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 casos por canal, 6 también `@smoke`):
 - El feature usa el mensaje de la API ("No encontramos información para esta cédula."); el panel del Figma lo muestra sin punto, así que el step de interfaz ignora el punto final.
 - Los casos de protocolo (405, 415, JSON mal formado) no van en Gherkin: solo en `tests/api/`.
 - Mutación verificada: si el serializer omite la designación fallan los 3 escenarios de jurado; si se acepta el 0 inicial falla su ejemplo.
+- **Un escenario por navegador:** `step_defs/interfaz/conftest.py` tiene la fixture automática `_un_escenario_por_navegador(page)`. Hace que cada escenario de interfaz se recoja una vez por cada `--browser` (`[chromium]`, `[firefox]`, `[webkit]`), como las E2E. No quitarla: ver el caso siguiente.
+
+#### Caso resuelto: los escenarios BDD de interfaz no se separaban por navegador (2026-11-12)
+
+- **Cómo se detectó:** al revisar el primer reporte publicado en GitHub Pages (https://crisprog2.github.io/ClaudeProyectoRegistraduria/). Mostraba 577 pruebas en vez de 605, el grupo BDD tenía 28 resultados en vez de 56, y aparecían "14 pruebas repetidas".
+- **Causa:** pytest-playwright repite una prueba por navegador en `pytest_generate_tests`, y solo lo hace si `page`, `browser_name` u otra fixture del navegador forma parte de las fixtures que la prueba declara. Las funciones de prueba que genera pytest-bdd no declaran `page`: cada step la obtiene al ejecutarse, a través de los Page Objects `consulta` y `resultado`. Por eso los 14 escenarios se recogían una sola vez, sin `[navegador]` en el nombre, y la fixture `browser_name` devolvía el primer `--browser`. Con más de uno, pytest-playwright lo avisa con el warning "When using unittest.TestCase specifying multiple browsers is not supported" (el "1 warning" que salía en las corridas con varios navegadores).
+- **Consecuencias:**
+  - **En local, con varios navegadores a la vez** (`pytest tests/bdd tests/e2e -m e2e --browser chromium --browser firefox --browser webkit` o `scripts/pruebas.py interfaz` con varios `--browser`), los escenarios BDD solo corrían en el primero. Las E2E sí corrían en todos.
+  - **En el CI** sí corrían en los tres navegadores, porque cada trabajo usa uno solo. Pero el resultado no llevaba el navegador como parámetro: los tres trabajos producían el mismo `historyId`, y Allure los juntaba como repeticiones de una misma prueba.
+  - **Lo verificado antes sigue siendo válido:** la afirmación "14 casos BDD pasan en Chromium, Firefox y WebKit" se comprobó con una corrida separada por navegador.
+- **Corrección:** la fixture automática `_un_escenario_por_navegador(page)`. Al depender de `page`, pytest-playwright la ve al recoger las pruebas y repite cada escenario por navegador. Devuelve la misma página que usan los Page Objects; no abre otra. Solo está en `step_defs/interfaz/`, porque los escenarios por la API no usan navegador. Además, `environment.properties` ya no incluye "Navegadores": en el CI cada trabajo escribía el suyo y quedaba solo el último. Cada prueba de interfaz ya muestra su navegador como parámetro.
+- **Verificación (en local):**
+  - Con 1, 2 y 3 navegadores se recogen 14, 28 y 42 escenarios de interfaz. Los de la API siguen siendo 14.
+  - `pytest tests/bdd -m e2e --browser chromium --browser firefox --alluredir=...` dio 28 resultados con 28 `historyId` distintos y el parámetro `browser_name`, sin el warning.
+  - `python scripts/pruebas.py todo --allure --browser chromium --browser firefox` pasó: 97 + 124 + 256 pruebas, y 477 resultados en Allure (BDD 42 = 14 por la API + 14 por navegador), sin repetidos.
+- **Mutación verificada:** sin el decorador de la fixture vuelven los 14 escenarios con dos navegadores, el warning y la ejecución en un solo navegador.
+- **Si reaparece:** el warning "specifying multiple browsers is not supported", o un grupo BDD con menos de 14 × navegadores + 14 resultados en el reporte, indican que alguna prueba que usa el navegador no declara `page`.
 
 Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backend y el frontend en marcha, en Chromium, Firefox y WebKit. Cubren lo que los features no describen.
 - `test_flujo_consulta.py`: formato de cédula y mesa, edad solo para el votante, textos de los 3 casos de jurado, mapa, la cédula nunca en la URL, recarga y entrada directa, 404, avisos obligatorios y ninguna mención de entidades reales.
@@ -172,10 +189,13 @@ Un solo reporte de las cuatro suites. Se genera en local (README, paso 9) y en c
 - **Solo `allure-pytest` (2.16.2), en los dos `requirements.txt`:** no se usa `allure-pytest-bdd` porque los dos registran `--alluredir` y pytest no arranca si están instalados juntos. Eso rompería también el backend, que comparte el `.venv`. Los pasos de Gherkin se registran con los hooks de pytest-bdd.
 - **Plugin `tests/support/allure_reporte.py`**, registrado con `pytest_plugins` en `tests/conftest.py`:
   - **Agrupación:** asigna el nivel (API, BDD, E2E). En BDD agrega el canal ("Por la API" o "Por la interfaz") y el feature, porque los mismos escenarios corren dos veces.
+    - **Cómo lo deduce, con índices negativos de Python (`-1` = último elemento):** `_carpetas()` toma la ruta del archivo de prueba relativa a la raíz y usa `.parts[:-1]`, que quita el nombre del archivo y deja solo las carpetas. Por ejemplo, `tests/bdd/step_defs/interfaz/test_consulta_jurado.py` queda como `('tests', 'bdd', 'step_defs', 'interfaz')`. El nivel es `carpetas[1]` (`api`, `bdd` o `e2e`), y en BDD el canal es `carpetas[-1]`, la última carpeta (`api` o `interfaz`), que `CANALES_BDD` traduce a "Por la API" o "Por la interfaz".
+    - **Revisado el 2026-11-12, a pedido del usuario:** no es un error. `carpetas[-1]` solo se usa cuando el nivel es `bdd`, así que siempre hay al menos dos carpetas y no puede fallar por índice. Comprobado con las rutas reales de API, BDD por la API, BDD por la interfaz y E2E, y en el reporte publicado. Se decidió no cambiar el código.
+    - **Límite conocido (solo cosmético):** si una prueba se pusiera directamente en `tests/bdd/`, sin `step_defs/api` ni `step_defs/interfaz`, `carpetas[-1]` sería `bdd` y el reporte mostraría el grupo "bdd" en lugar de un canal. No rompe nada, y la convención del proyecto separa los steps por canal. Una carpeta de canal nueva aparecería con su propio nombre hasta agregarla a `CANALES_BDD`.
   - **Escenarios BDD:** título, descripción tomada de la historia de usuario del feature (sin ella, Allure muestra la ruta del archivo en el disco), pasos de Gherkin y cada columna del ejemplo como parámetro.
   - **Severidad:** las `smoke` son críticas.
   - **Evidencia en fallos:** la petición y la respuesta de la API (`ConsultaApiClient.ultima_respuesta`, que se reinicia antes de cada prueba porque el cliente dura toda la sesión), y la URL, la captura y la traza de Playwright. La traza se toma del registro de artefactos de pytest-playwright (atributo privado `_playwright_artifacts_recorder`): si se actualiza pytest-playwright, revisarlo.
-  - **Entorno:** escribe `environment.properties` con versiones y URLs, sin secretos.
+  - **Entorno:** escribe `environment.properties` con versiones y URLs, sin secretos. No incluye los navegadores: en el CI cada trabajo escribe el suyo y al juntarlos solo quedaba el último.
 - **Backend:** `backend/tests/conftest.py` solo asigna el grupo "Backend"; el backend no importa nada de `tests/support/`.
 - **`reportes/preparar-resultados.mjs`** se ejecuta antes de generar: quita las fixtures que terminaron bien (unas 13 000 por corrida) y el parámetro interno `_pytest_bdd_example`, porque Allure 3 no respeta el modo oculto.
 - **`--alluredir=` siempre con signo igual:** con un espacio y la carpeta ya creada, pytest toma la ruta como argumento, cambia el `rootdir` y el backend pierde su `pytest.ini`.
@@ -284,7 +304,8 @@ Decisiones:
 - ✅ Reporte de Allure local con las cuatro suites (349 pruebas), en `main` desde el PR #2 (2026-11-11).
 - ✅ Pipeline de CI en GitHub Actions y `scripts/pruebas.py`, en `main` desde el PR #3 (2026-11-11): 605 pruebas por corrida, con el reporte de Allure como artefacto. La primera corrida sobre `main` pasó (https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43062173386). Badge de CI en el README.
 - ✅ `main` protegida con el ruleset "Proteger main": exige PR y el CI en verde (ver "Integración continua").
-- 🧪 Reporte de Allure en GitHub Pages con historial, en la rama `feature/allure-github-pages`: historial y subcarpeta verificados en local. Falta que el usuario active Pages (Source: GitHub Actions) y el primer despliegue desde `main`.
+- ✅ Reporte de Allure en GitHub Pages con historial, en `main` desde el PR #5 (2026-11-12): publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con el primer despliegue verificado.
+- 🧪 Escenarios BDD de interfaz separados por navegador (rama `fix/bdd-por-navegador`), verificados en local con dos navegadores. Ver "Caso resuelto" en la sección de pruebas BDD. Con esto, el reporte publicado mostrará 605 pruebas en vez de 577.
 - ⏳ Siguiente: cobertura de código. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 

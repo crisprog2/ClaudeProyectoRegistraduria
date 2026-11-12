@@ -196,7 +196,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Documentación de la API con Swagger UI y OpenAPI 3.1 | ✅ |
 | Pruebas white-box del backend (pytest-django, 97 pruebas) | ✅ |
 | Pruebas black-box de la API y su documentación (pytest + requests, 110 pruebas) | ✅ |
-| Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz | ✅ |
+| Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz en cada navegador | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
@@ -363,14 +363,14 @@ pytest tests/bdd -m "bdd and api"    # escenarios BDD contra la API
 pytest tests/bdd -m "bdd and e2e"    # escenarios BDD contra la interfaz
 pytest tests/e2e                     # E2E en Chromium
 pytest tests/e2e --headed            # E2E viendo el navegador
-pytest tests/bdd tests/e2e -m e2e --browser chromium --browser firefox --browser webkit
+pytest tests/bdd tests/e2e -m e2e --browser chromium --browser firefox --browser webkit   # BDD y E2E en los tres
 pytest tests -m smoke                # subconjunto crítico de todas las suites
 ```
 
 | Suite | Casos | Qué cubre |
 |-------|-------|-----------|
 | `tests/api` | 110 | Contrato de la API, validaciones, protocolo HTTP y coincidencia con la documentación OpenAPI |
-| `tests/bdd` | 28 | 14 escenarios de negocio, por la API y por la interfaz |
+| `tests/bdd` | 28 por navegador | 14 escenarios de negocio, por la API y por la interfaz. Con varios navegadores, los de interfaz se repiten en cada uno (14 + 14 × navegadores) |
 | `tests/e2e` | 114 | Navegación, privacidad, formato, errores, fallas de red, accesibilidad, pantallas pequeñas y Swagger UI |
 
 Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos de prueba en [`tests/data/`](tests/data). Las URL se toman de `API_BASE_URL` y `FRONTEND_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000` y `http://localhost:5173`). Si falta algún servidor, la corrida se detiene con instrucciones.
@@ -445,6 +445,7 @@ npm run reporte
 
 - **Usa `--alluredir=` con el signo igual.** Si la ruta va separada por un espacio y la carpeta ya existe, pytest la toma como una ruta de pruebas. En el paso 1 eso hace que use el `pytest.ini` de la raíz en lugar del de `backend/`, y las pruebas del backend fallan con "settings are not configured".
 - **Sin `--alluredir`, las pruebas no generan resultados para Allure.** Siguen corriendo igual.
+- **Cada navegador por separado:** los escenarios BDD de interfaz y las pruebas E2E aparecen una vez por navegador, con su navegador como parámetro. Hasta el 2026-11-12, los escenarios BDD no se separaban: en local corrían solo en el primer navegador y en el reporte del CI aparecían como repeticiones. El caso está documentado en `CLAUDE.md`.
 - **Organización:** el reporte agrupa las pruebas en Backend, API, BDD y E2E. Los escenarios BDD se separan por canal ("Por la API" y "Por la interfaz") y por feature, y muestran la historia de usuario y cada paso de Gherkin. Las pruebas `smoke` tienen severidad crítica, y los markers sirven como etiquetas para filtrar.
 - **Evidencia de las pruebas que fallan:** en las de API, la petición y la respuesta. En las de interfaz, la URL, una captura de la página y la traza de Playwright, que se abre en https://trace.playwright.dev. La traza solo se guarda con `--tracing retain-on-failure`, que hace la corrida un poco más lenta: en Chromium pasó de unos 60 a unos 80 segundos. Para varios navegadores, agrega `--browser firefox --browser webkit` al paso 2.
 - **Antes de generar:** `npm run reporte` quita las fixtures que terminaron bien (unas 20 por prueba, de pytest-django y Playwright) y el parámetro interno de pytest-bdd. Las fixtures que fallaron se conservan.
