@@ -165,6 +165,7 @@ Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 escenarios por la API y 14 por la inte
   - `pytest tests/bdd -m e2e --browser chromium --browser firefox --alluredir=...` dio 28 resultados con 28 `historyId` distintos y el parámetro `browser_name`, sin el warning.
   - `python scripts/pruebas.py todo --allure --browser chromium --browser firefox` pasó: 97 + 124 + 256 pruebas, y 477 resultados en Allure (BDD 42 = 14 por la API + 14 por navegador), sin repetidos.
 - **Mutación verificada:** sin el decorador de la fixture vuelven los 14 escenarios con dos navegadores, el warning y la ejecución en un solo navegador.
+- **Verificación en el CI (PR #6, corrida sobre `main` 43243179420):** pasaron todos los trabajos. El reporte publicado muestra 605 resultados, ninguna prueba repetida y el commit `54b39fc`.
 - **Si reaparece:** el warning "specifying multiple browsers is not supported", o un grupo BDD con menos de 14 × navegadores + 14 resultados en el reporte, indican que alguna prueba que usa el navegador no declara `page`.
 
 Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backend y el frontend en marcha, en Chromium, Firefox y WebKit. Cubren lo que los features no describen.
@@ -305,7 +306,7 @@ Decisiones:
 - ✅ Pipeline de CI en GitHub Actions y `scripts/pruebas.py`, en `main` desde el PR #3 (2026-11-11): 605 pruebas por corrida, con el reporte de Allure como artefacto. La primera corrida sobre `main` pasó (https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43062173386). Badge de CI en el README.
 - ✅ `main` protegida con el ruleset "Proteger main": exige PR y el CI en verde (ver "Integración continua").
 - ✅ Reporte de Allure en GitHub Pages con historial, en `main` desde el PR #5 (2026-11-12): publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con el primer despliegue verificado.
-- 🧪 Escenarios BDD de interfaz separados por navegador (rama `fix/bdd-por-navegador`), verificados en local con dos navegadores. Ver "Caso resuelto" en la sección de pruebas BDD. Con esto, el reporte publicado mostrará 605 pruebas en vez de 577.
+- ✅ Escenarios BDD de interfaz separados por navegador, en `main` desde el PR #6 (2026-11-12). Ver "Caso resuelto" en la sección de pruebas BDD. Verificado en el reporte publicado: 605 pruebas (antes 577) y ninguna repetida. El historial de Pages registra las dos corridas (577 → 605).
 - ⏳ Siguiente: cobertura de código. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
