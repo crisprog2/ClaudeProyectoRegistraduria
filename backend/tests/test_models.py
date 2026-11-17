@@ -1,9 +1,15 @@
-"""Pruebas unitarias de las propiedades calculadas de Persona (no usan base de datos)."""
+"""
+Pruebas del modelo de datos.
+
+- Propiedades calculadas de Persona: en memoria, sin base de datos.
+- Textos de __str__: con los datos de demostración, porque leen modelos relacionados.
+  Son los que muestra el admin y los que documenta CLAUDE.md.
+"""
 from datetime import date
 
 import pytest
 
-from apps.consultas.models import Persona
+from apps.consultas.models import Ciudad, Departamento, DesignacionJurado, Mesa, Persona, PuestoVotacion
 
 
 def persona(**campos):
@@ -33,3 +39,22 @@ def test_nombre_completo_omite_opcionales_vacios(segundo_nombre, segundo_apellid
 ])
 def test_calcular_edad_en_dias_limite(nacimiento, referencia, edad):
     assert persona(fecha_nacimiento=nacimiento).calcular_edad(referencia) == edad
+
+
+def test_edad_es_la_edad_a_la_fecha_de_hoy():
+    ana = persona(fecha_nacimiento=date(1990, 6, 15))
+
+    assert ana.edad == ana.calcular_edad(date.today())
+
+
+@pytest.mark.parametrize('obtener, esperado', [
+    (lambda: Departamento.objects.get(pk='05'), 'Antioquia'),
+    (lambda: Ciudad.objects.get(pk='05001'), 'Medellín'),
+    (lambda: PuestoVotacion.objects.get(pk='050010101'), 'Colegio Cívico La Esperanza - Calle 48 # 65-20'),
+    (lambda: Mesa.objects.get(puesto='050010101', numero=18), 'Mesa 018 · Colegio Cívico La Esperanza'),
+    (lambda: Persona.objects.get(pk='1098765432'), 'Carlos Martínez'),
+    (lambda: DesignacionJurado.objects.get(persona='1098765432'),
+     'Jurado titular · Carlos Martínez · Mesa 018 · Colegio Cívico La Esperanza'),
+], ids=['departamento', 'ciudad', 'puesto', 'mesa', 'persona', 'designacion'])
+def test_str_legible_sin_ids_internos(datos_demo, obtener, esperado):
+    assert str(obtener()) == esperado

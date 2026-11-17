@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml/badge.svg)](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/workflows/ci.yml)
 [![Reporte de pruebas](https://img.shields.io/badge/reporte-Allure-orange)](https://crisprog2.github.io/ClaudeProyectoRegistraduria/)
+[![Cobertura del backend](https://img.shields.io/badge/cobertura%20backend-m%C3%ADnimo%2095%25-brightgreen)](https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/)
 
 > ⚠️ **Proyecto ficticio de demostración.** ConsultaVoto no es un sitio oficial ni está conectado a ningún registro electoral real. Todos los nombres, cédulas, puestos y mesas son datos inventados.
 
@@ -140,6 +141,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 - **Accesibilidad automatizada** con axe-core (WCAG 2.1 A/AA) en cada pantalla.
 - **La documentación de la API se prueba**: las respuestas reales se validan contra la especificación OpenAPI, así que los campos no documentados y los ejemplos desactualizados hacen fallar la suite.
 - **Pruebas de mutación**: las reglas de negocio y de seguridad se comprobaron reintroduciendo el defecto.
+- **Cobertura de código del backend** con ramas, con un mínimo del 95 % que el CI exige en cada pull request. La cobertura dice qué código no se ejecuta; las pruebas de mutación, si las pruebas que sí lo ejecutan detectarían un error. Se usan las dos.
 - **`conftest.py` por nivel** para aislar fixtures.
 - **Datos de prueba externos** en `tests/data/`, nunca quemados en los tests.
 - **Markers** (`api`, `bdd`, `e2e`, `smoke`) para ejecutar suites selectivas. Correr todo sin filtros es la regresión completa.
@@ -161,6 +163,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 │   │   └── fixtures/          # Datos de demostración (datos_demo.json)
 │   ├── manage.py
 │   ├── pytest.ini             # Configuración de pytest-django (settings de test)
+│   ├── .coveragerc            # Cobertura: qué se mide, qué se excluye y el mínimo (95 %)
 │   └── tests/                 # Pruebas white-box (pytest-django)
 ├── frontend/                  # React + Vite
 │   ├── vite.config.js         # Proxy de /api hacia el backend
@@ -178,7 +181,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 │   ├── api/                   # Pruebas de API y de su documentación
 │   ├── bdd/                   # features/ (Gherkin) + step_defs/api y step_defs/interfaz
 │   └── e2e/                   # Flujo, errores, accesibilidad, pantallas pequeñas y Swagger UI con Playwright
-├── reportes/                  # Generador del reporte de Allure (Allure 3, Node)
+├── reportes/                  # Generador del reporte de Allure (Allure 3, Node); cobertura/ con el HTML de cobertura
 ├── pytest.ini                 # Configuración y markers de las pruebas black-box
 └── .env.example               # Variables de entorno requeridas
 ```
@@ -194,7 +197,8 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Admin de Django para revisar los datos | ✅ |
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Documentación de la API con Swagger UI y OpenAPI 3.1 | ✅ |
-| Pruebas white-box del backend (pytest-django, 97 pruebas) | ✅ |
+| Pruebas white-box del backend (pytest-django, 136 pruebas) | ✅ |
+| Cobertura de código del backend (líneas y ramas): 100 %, con un mínimo del 95 % en el CI | ✅ [https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/](https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/) |
 | Pruebas black-box de la API y su documentación (pytest + requests, 110 pruebas) | ✅ |
 | Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz en cada navegador | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
@@ -203,7 +207,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Reporte de Allure con todas las suites (local) | ✅ |
-| Pipeline de CI en GitHub Actions: 605 pruebas en tres navegadores y reporte de Allure | ✅ |
+| Pipeline de CI en GitHub Actions: 644 pruebas en tres navegadores, cobertura y reporte de Allure | ✅ |
 | Rama `main` protegida: solo admite cambios por pull request con el CI en verde | ✅ |
 | Reporte de Allure publicado en GitHub Pages, con historial de las últimas 30 corridas | ✅ [https://crisprog2.github.io/ClaudeProyectoRegistraduria/](https://crisprog2.github.io/ClaudeProyectoRegistraduria/) |
 
@@ -212,13 +216,13 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 GitHub Actions corre todas las suites en máquinas limpias en cada pull request hacia `main`, en cada push a `main` y a mano desde la pestaña Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
 ```
-                ┌─ Backend: 97 pruebas, MySQL 8.0 en contenedor
+                ┌─ Backend: 136 pruebas y cobertura (mínimo 95 %), MySQL 8.0 en contenedor
 Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el backend levantado
                 ├─ Frontend: npm run build
                 └─ Interfaz × 3 navegadores en paralelo: 128 pruebas en cada uno
                                    │
                                    ▼
-                    Reporte de Allure con todos los resultados
+                    Reporte de Allure con todos los resultados + reporte de cobertura
 ```
 
 - **Misma lógica en todos lados:** cada trabajo prepara la máquina y llama a [`scripts/pruebas.py`](scripts/pruebas.py), el mismo script que se usa en local (paso 7). Otra herramienta de CI, como Jenkins, podría reutilizarlo con su propio archivo.
@@ -228,11 +232,12 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Sistema fijo:** las máquinas usan Ubuntu 24.04 en lugar de `ubuntu-latest`, para que el CI no cambie de sistema sin aviso.
 - **Navegadores ya instalados:** los trabajos de interfaz corren dentro de la imagen oficial de Playwright (`mcr.microsoft.com/playwright/python:v1.64.1-noble`), que trae los navegadores y sus librerías. En las primeras corridas, instalarlos con `apt` falló porque las máquinas no lograban conectarse a los servidores de paquetes de Ubuntu.
 - **Reporte publicado:** cada push a `main` publica el reporte de Allure en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, aunque alguna prueba falle. En **Report ▾ → Gráficas** se ven las tendencias de las últimas 30 corridas: estado, duración y estabilidad. Cada prueba también muestra su propio historial.
+- **Cobertura del backend:** el trabajo del backend mide la cobertura de líneas y ramas, y falla si baja del 95 %. Así, un pull request que agrega código sin pruebas no se puede fusionar. La tabla por archivo aparece en el resumen de la corrida, el HTML se guarda como artefacto `cobertura-backend`, y el de `main` se publica en https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/.
 - **Historial:** se guarda en la propia página (`historial/history.jsonl`). Antes de generar el reporte, el CI lo descarga, agrega la corrida nueva y lo vuelve a publicar. Si la página no responde, el reporte se genera igual, sin historial. Los pull requests no tocan el historial publicado.
 - **Reporte de cada corrida:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
 - **Seguridad:** permisos de solo lectura; solo el trabajo `publicar` puede escribir en Pages. Las acciones de GitHub están fijadas por versión exacta. En las ramas de pull request, una corrida nueva cancela la anterior; en `main`, cada merge espera su turno para no cortar una publicación.
-- **Resultado:** cada corrida ejecuta 605 pruebas: 97 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
+- **Resultado:** cada corrida ejecuta 644 pruebas: 136 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
 - **`main` protegida:** no admite cambios directos. Todo cambio llega por pull request, y el merge solo es posible si pasan los seis trabajos de pruebas (backend, API, frontend y los tres navegadores) con la rama al día. Tampoco se puede borrar `main` ni reescribir su historial.
 - **Flujo de un cambio:** crear una rama desde `main` → subirla y abrir un pull request → el CI corre solo → si todo pasa, se hace el merge.
 - **Ajustes de la primera puesta en marcha:** las primeras corridas fallaron por el entorno de GitHub, no por el código. Las máquinas no podían descargar paquetes de Ubuntu (de ahí la imagen de Playwright), la caché de pip no funcionaba dentro del contenedor y Firefox no arrancaba porque `HOME` pertenecía a otro usuario. Los detalles están en `CLAUDE.md`.
@@ -324,6 +329,18 @@ pytest
 
 pytest-django crea la base `test_registraduria`, carga los datos de demostración y la borra al terminar. Para incluir estas pruebas en el reporte de Allure, ver el paso 9.
 
+**Cobertura de código.** Desde la raíz del repositorio:
+
+```powershell
+python scripts/pruebas.py backend --cobertura
+```
+
+- **Qué mide:** las líneas y las ramas (cada `if` por sus dos caminos) de `apps/` y `config/`. La configuración está en [`backend/.coveragerc`](backend/.coveragerc), con el motivo de cada exclusión: migraciones, `settings/local.py`, `asgi.py` y `wsgi.py`.
+- **Mínimo del 95 %:** si la cobertura total baja de ese valor, el comando termina con error, aunque todas las pruebas pasen. Hoy está en 100 %.
+- **Resultado:** la tabla por archivo en la terminal, con las líneas que faltan, y el reporte HTML en `reportes/cobertura/index.html` (fuera de Git). También deja `reportes/cobertura/coverage.xml`, el formato estándar que leen otras herramientas.
+- **No se activa con un `pytest` normal:** si se activara siempre, correr una sola prueba fallaría por cobertura baja, porque solo se ejecutó una parte del código.
+- **Cobertura no es calidad:** dice qué código no ejecuta ninguna prueba, pero no si las pruebas que lo ejecutan verifican algo. Por eso las reglas importantes también se comprueban con pruebas de mutación.
+
 ### 7. Pruebas black-box: API, BDD y E2E
 
 **Con un solo comando.** [`scripts/pruebas.py`](scripts/pruebas.py) levanta el backend (y el frontend, si hace falta), corre las pruebas y apaga los servidores al terminar, aunque algo falle. Es el mismo script que usa el CI:
@@ -334,6 +351,7 @@ python scripts/pruebas.py interfaz                     # BDD por la interfaz y E
 python scripts/pruebas.py interfaz --browser firefox --browser webkit
 python scripts/pruebas.py todo                         # backend, API e interfaz seguidos
 python scripts/pruebas.py todo --allure                # además guarda resultados para el reporte (paso 9)
+python scripts/pruebas.py todo --cobertura             # además mide la cobertura del backend (paso 6)
 ```
 
 - **Puertos libres:** el script se detiene si ya hay un servidor en el puerto 8000 o 5173, porque correría las pruebas contra él. Por ejemplo, un backend con el límite normal de consultas daría error 429.
@@ -456,7 +474,6 @@ npm run reporte
 
 ### Pendiente
 
-- Cobertura de código
 - Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
 
 ## Aviso

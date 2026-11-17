@@ -1,0 +1,33 @@
+# Configuración de la cobertura de código del backend (coverage.py, usado por pytest-cov).
+#
+# No se activa con un "pytest" normal: solo con "python scripts/pruebas.py backend --cobertura"
+# (o "todo --cobertura"). Si se activara siempre, correr una sola prueba fallaría por
+# cobertura baja, porque solo se ejecutó una parte del código.
+
+[run]
+# Cobertura de ramas: además de las líneas, cada "if" debe probarse por los dos caminos.
+branch = True
+source =
+    apps
+    config
+omit =
+    # Generadas por Django a partir de models.py; las prueba pytest-django al crear la base.
+    */migrations/*
+    # Settings de desarrollo: las pruebas usan config.settings.test.
+    config/settings/local.py
+    # Puntos de entrada de servidores de producción (WSGI/ASGI); no se usan en las pruebas.
+    config/asgi.py
+    config/wsgi.py
+
+[report]
+# Mínimo exigido. Si la cobertura total baja de este valor, la corrida falla.
+# Se fijó en 95 % (la medición tras las pruebas de la fase 1 da 100 %): deja margen para
+# cambios pequeños y detecta un módulo nuevo sin pruebas. Cambiarlo solo de forma
+# consciente y explicándolo en el pull request.
+fail_under = 95
+show_missing = True
+skip_empty = True
+precision = 1
+
+[html]
+title = ConsultaVoto · Cobertura del backend

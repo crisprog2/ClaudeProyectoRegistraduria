@@ -14,6 +14,7 @@
 # En cada push a main, el reporte de Allure se publica en GitHub Pages con su historial
 # (https://crisprog2.github.io/ClaudeProyectoRegistraduria/). El historial vive en la
 # propia página: se descarga antes de generar el reporte y se vuelve a publicar con él.
+# El reporte de cobertura del backend se publica en el mismo sitio, en /cobertura/.
 #
 # No necesita secretos: la clave de Django se genera en cada corrida y las claves
 # de MySQL solo valen dentro del contenedor temporal de cada trabajo.
@@ -71,8 +72,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: ./.github/actions/preparar-entorno
-      - name: Pruebas del backend
-        run: python scripts/pruebas.py backend --allure
+      # Con --cobertura, el trabajo falla si la cobertura baja del mínimo (backend/.coveragerc),
+      # y la tabla de cobertura aparece en el resumen de la corrida.
+      - name: Pruebas del backend y cobertura
+        run: python scripts/pruebas.py backend --allure --cobertura
       - name: Guardar resultados de Allure
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7.0.2
@@ -80,6 +83,14 @@ jobs:
           name: allure-results-backend
           path: reportes/allure-results
           retention-days: 14
+      # Se guarda aunque la cobertura no alcance el mínimo: es cuando más se necesita ver qué falta.
+      - name: Guardar el reporte de cobertura
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: cobertura-backend
+          path: reportes/cobertura
+          retention-days: 30
 
   api:
     name: API y BDD por la API
@@ -227,6 +238,14 @@ jobs:
         run: |
           mkdir -p reportes/allure-report/historial
           cp reportes/historial/history.jsonl reportes/allure-report/historial/
+      # Después de generar el reporte, que reescribe allure-report/. Queda en <sitio>/cobertura/.
+      # Si el trabajo del backend no llegó a producirlo, el reporte de Allure se publica igual.
+      - name: Incluir el reporte de cobertura en el sitio
+        continue-on-error: true
+        uses: actions/download-artifact@v8.0.2
+        with:
+          name: cobertura-backend
+          path: reportes/allure-report/cobertura
       - name: Publicar el reporte como artefacto
         uses: actions/upload-artifact@v7.0.2
         with:

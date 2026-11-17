@@ -13,5 +13,6 @@ Cómo correrlo: README de la raíz, paso 9 de "Ejecución". En el CI se genera e
 | `allure-report/` | Reporte generado, unos 11 MB. No se sube a Git |
 | `logs/` | Logs de los servidores que levanta `scripts/pruebas.py`. No se sube a Git |
 | `historial/` | Historial local (`history.jsonl`) para las tendencias. No se sube a Git |
+| `cobertura/` | Reporte HTML de cobertura del backend y `coverage.xml`, que genera `scripts/pruebas.py backend --cobertura`. No se sube a Git. En el CI se publica en `<sitio>/cobertura/` |
 
 Los resultados los produce `allure-pytest`. El plugin [`tests/support/allure_reporte.py`](../tests/support/allure_reporte.py) agrupa las pruebas, registra los pasos de Gherkin y adjunta la evidencia de las pruebas que fallan.
