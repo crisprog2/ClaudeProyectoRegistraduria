@@ -39,6 +39,7 @@ reportes/allure-results/
 reportes/allure-report/
 reportes/logs/
 reportes/historial/
+reportes/cobertura/
 
 # --- IDE / SO ---
 .vscode/

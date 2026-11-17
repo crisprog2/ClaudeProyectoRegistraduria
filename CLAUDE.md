@@ -32,6 +32,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
   - `tests/bdd/` — pytest-bdd, Gherkin **en español** (`# language: es`).
   - `tests/e2e/` — Playwright para Python (pytest-playwright).
 - **Reportes**: Allure 3 (`reportes/`, Node) con resultados de `allure-pytest`. Ver la sección "Reporte de Allure".
+- **Cobertura**: pytest-cov (coverage.py) sobre el backend, con ramas y un mínimo del 95 %. Ver la sección "Cobertura de código".
 - **CI**: GitHub Actions en `.github/workflows/ci.yml`, que llama a `scripts/pruebas.py`. Ver la sección "Integración continua".
 
 ## Diseño (Figma)
@@ -127,7 +128,7 @@ Documentación: `/api/docs/` (Swagger UI) y `/api/schema/` (OpenAPI; YAML por de
 - Los docstrings de los serializadores se publican en Swagger: las notas internas van en comentarios.
 - Está siempre activa porque la API ya es abierta y los datos son ficticios; revisarlo si se despliega en un servidor público. Con `DEBUG=False` la página responde, pero Django no sirve sus archivos estáticos y se ve en blanco: un despliegue necesitaría `collectstatic` y un servidor de estáticos.
 
-Pruebas white-box (`backend/tests/`, 97): `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool` y controlador PyMySQL). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+Pruebas white-box (`backend/tests/`, 136): `test_admin.py` (listados, filtro "es jurado", columnas calculadas y consultas por fila; ver "Cobertura de código"), `test_manejador_errores.py`, `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool` y controlador PyMySQL). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
 
 Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
 - `test_consulta_cedula.py`: respuesta exacta de los 10 ciudadanos del fixture, reglas de los escenarios mínimos (misma mesa, otra mesa del mismo puesto, otro puesto, solo votante), espacios externos, contrato de claves y que no se expongan datos sensibles.
@@ -204,11 +205,30 @@ Un solo reporte de las cuatro suites. Se genera en local (README, paso 9) y en c
 - **Verificado:** con dos pruebas temporales que fallaban a propósito, se adjuntaron la petición y la respuesta 404 en la de API, y la URL, la captura y la traza en la de interfaz. Se borraron después.
 - **Fuera de Git:** `reportes/allure-results/` y `reportes/allure-report/`. Se retiró `pytest-html`, que no se usaba.
 
+## Cobertura de código
+
+Solo del backend, medida con las pruebas white-box (fase 1). `pytest-cov` 7.1.0 y `coverage` 7.17.3, fijadas en `backend/requirements.txt` (coverage también, para que el porcentaje no cambie con otra versión).
+- **Configuración en `backend/.coveragerc`:** mide `apps` y `config` con ramas (`branch = True`). Excluye las migraciones, `settings/local.py`, `asgi.py` y `wsgi.py`, cada una con su motivo en un comentario. `fail_under = 95`.
+- **Solo con `scripts/pruebas.py backend --cobertura`** (o `todo --cobertura`), no en `pytest.ini`: con `addopts`, correr una sola prueba fallaría por cobertura baja.
+- **Salidas en `reportes/cobertura/`** (fuera de Git): HTML (`index.html`) y `coverage.xml`, más la tabla en la terminal. En el CI, `resumen_cobertura_en_github()` agrega la tabla en Markdown a `GITHUB_STEP_SUMMARY`; en local esa variable no existe y no hace nada.
+- **En el CI:** dentro del trabajo `Backend (white-box)`, así que no hay un check nuevo ni que tocar el ruleset. El artefacto `cobertura-backend` se guarda aunque falle (`if: !cancelled()`). El trabajo `reporte` lo descarga en `allure-report/cobertura/` después de generar el reporte de Allure, porque la generación reescribe esa carpeta, y con `continue-on-error`, para que el reporte de Allure se publique aunque falte la cobertura. Así el artefacto `reporte-allure` y GitHub Pages la incluyen: https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/.
+- **El mínimo:** el 95 % lo aprobó el usuario el 2026-11-17. Deja margen para cambios pequeños y detecta un módulo nuevo sin pruebas. Cambiarlo solo de forma consciente y explicándolo en el pull request.
+- **Medición inicial (2026-11-17):** 92 % con las 97 pruebas de entonces. Faltaban el admin (81 %: ninguna prueba lo abría), los `__str__` y la propiedad `edad` (90 %), los errores de configuración de `env_requerida` y `env_entero_positivo`, y el caso de error no controlado del manejador de errores. Lo crítico (validadores, servicios, serializadores y vista) ya estaba al 100 %.
+- **Pruebas agregadas (39, el backend pasa de 97 a 136), 100 % de líneas y ramas:**
+  - `test_admin.py`: los 6 listados y la ficha de una persona abren con `admin_client` (superusuario que pytest-django crea solo en la base de pruebas); el filtro "es jurado" con sí, no y sin filtro; las columnas "es jurado" y "vota en la misma mesa"; y que el listado de personas no haga una consulta por fila.
+  - `test_models.py`: los `__str__` documentados y `edad`.
+  - `test_configuracion.py`: variable obligatoria ausente o vacía, y entero positivo válido, vacío e inválido (`0`, `00`, `-5`, `1.5`, `abc`, `10/min`).
+  - `test_manejador_errores.py`: error no controlado (devuelve `None` y Django responde 500), un error de DRF sin código propio (el 401 de `NotAuthenticated` sale como `ERROR_DE_SOLICITUD`, útil para cuando llegue JWT) y el 404 de Django, que conserva el formato.
+- **Hallazgo con el conteo de consultas:** con `list_select_related` el listado de personas hace 6 consultas; sin él, 16 (una por persona, por la columna "Es jurado"). En `Mesa` y `DesignacionJurado` quitarlo no cambia nada: Django aplica `select_related` por su cuenta a las `ForeignKey` de `list_display`. Solo la designación, que es una relación inversa, depende de `list_select_related`; por eso la prueba es solo de `Persona`, con un límite de 8.
+- **Mutación verificada:** un módulo nuevo sin pruebas baja la cobertura a 92,2 % y el comando termina con código 1, aunque las 136 pruebas pasen. También se detectan: el filtro "es jurado" invertido, la mesa sin ceros a la izquierda en `__str__`, aceptar `0` como límite de consultas y quitar `list_select_related` de `PersonaAdmin`.
+- **Observación sin cambiar (models.py es del usuario):** la propiedad `Persona.edad` usa `date.today()`, la fecha del sistema, mientras que la API usa `timezone.localdate()`, la de America/Bogota. Solo la usa el admin. Si el servidor estuviera en otra zona horaria, cerca de la medianoche el admin podría mostrar una edad distinta de la API el día del cumpleaños.
+- **Fases siguientes (opcionales):** 2) medir el backend mientras corren las pruebas black-box: exige apagar `runserver` de forma ordenada, porque `coverage` solo guarda los datos al salir y hoy `scripts/pruebas.py` lo cierra a la fuerza en Windows; 3) frontend: Playwright para Python no expone la cobertura del navegador, habría que instrumentar con `vite-plugin-istanbul`.
+
 ## Integración continua
 
 `.github/workflows/ci.yml` (GitHub Actions) corre en cada pull request y push a `main`, y a mano (`workflow_dispatch`).
-- **Trabajos:** `backend`, `api` (API y BDD por la API), `frontend` (`npm run build`), `interfaz` (matriz chromium/firefox/webkit, `fail-fast: false`) y `reporte`. Este último junta los `allure-results-*` con `download-artifact` (`merge-multiple`), genera el reporte con `reportes/` y lo publica como artefacto `reporte-allure`, aunque haya fallas (`if: !cancelled()`). En los push a `main`, además, descarga el historial publicado, lo incluye en el sitio y prepara el artefacto de Pages. El trabajo `publicar` lo despliega.
-- **Lógica en `scripts/pruebas.py`, no en el YAML:** comandos `base`, `backend`, `api`, `interfaz` y `todo`, con `--allure`, `--limpiar-allure` y `--browser` (repetible). Levanta los servidores que necesita, espera a que respondan, los apaga siempre (en Windows cierra el árbol de procesos de npm con `taskkill /T`) y devuelve el código de pytest. Se detiene si el puerto ya está ocupado. Solo usa la biblioteca estándar y python-dotenv. Así, un futuro Jenkinsfile o el uso local llaman a lo mismo.
+- **Trabajos:** `backend` (con `--cobertura`: falla si baja del 95 % y guarda el artefacto `cobertura-backend`), `api` (API y BDD por la API), `frontend` (`npm run build`), `interfaz` (matriz chromium/firefox/webkit, `fail-fast: false`) y `reporte`. Este último junta los `allure-results-*` con `download-artifact` (`merge-multiple`), genera el reporte con `reportes/` y lo publica como artefacto `reporte-allure`, aunque haya fallas (`if: !cancelled()`). También incluye el reporte de cobertura en `allure-report/cobertura/`. En los push a `main`, además, descarga el historial publicado, lo incluye en el sitio y prepara el artefacto de Pages. El trabajo `publicar` lo despliega.
+- **Lógica en `scripts/pruebas.py`, no en el YAML:** comandos `base`, `backend`, `api`, `interfaz` y `todo`, con `--allure`, `--limpiar-allure`, `--cobertura` (solo `backend` y `todo`) y `--browser` (repetible). Levanta los servidores que necesita, espera a que respondan, los apaga siempre (en Windows cierra el árbol de procesos de npm con `taskkill /T`) y devuelve el código de pytest. Se detiene si el puerto ya está ocupado. Solo usa la biblioteca estándar y python-dotenv. Así, un futuro Jenkinsfile o el uso local llaman a lo mismo.
 - **`base` no corre solo:** carga `datos_demo` y sobrescribe esos registros, así que en local se llama a mano. En CI cada trabajo lo llama sobre un contenedor nuevo.
 - **MySQL:** servicio `mysql:8.0` por trabajo, definido una vez con un ancla YAML (`&mysql` / `*mysql`; GitHub admite anclas desde 2025-09, pero no claves de combinación). Las claves están escritas en el YAML porque solo valen en ese contenedor temporal. `services` no puede leer el contexto `env`, así que ahí van literales.
 - **`.github/actions/preparar-entorno`** (acción compuesta): instala Python con caché de pip, genera `DJANGO_SECRET_KEY` (enmascarada) y da permisos sobre `test_registraduria` conectándose como root con PyMySQL. Sin ese permiso, pytest-django no podría crear la base de pruebas.
@@ -273,6 +293,7 @@ Decisiones:
 - **Configuración**: todo por variables de entorno (ver `.env.example`); nunca subir `.env`.
 - **Documentación del código**: docstring en cada módulo, clase y función pública, en español. En el frontend: comentario inicial en cada archivo JS y CSS, y JSDoc en cada componente y función. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring. En pruebas, el nombre `test_*` describe el caso; el docstring solo se agrega cuando la intención no es obvia.
 - **Pruebas que importan**: cuando una prueba protege una regla de seguridad o de negocio, comprobar al menos una vez que falla si se reintroduce el defecto (prueba de mutación), no solo que pasa.
+- **Cobertura**: el código nuevo del backend llega con sus pruebas; si la cobertura baja del 95 %, el CI no deja fusionar. Excluir un archivo de la medición o bajar el mínimo solo con un motivo escrito en `backend/.coveragerc` y en el pull request.
 - **Al terminar una tarea**: actualizar la sección "Estado" de este archivo y, si cambia algo visible para quien usa el repo, el README (tabla "Estado del proyecto" y "Ejecución").
 
 ## Estado
@@ -288,7 +309,7 @@ Decisiones:
 - ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
-- ✅ Pruebas white-box del backend: 97 pasan contra MySQL; mutación de `NUM_PROXIES` detectada.
+- ✅ Pruebas white-box del backend: 97 pasan contra MySQL; mutación de `NUM_PROXIES` detectada. Con la cobertura (2026-11-17) son 136.
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
 - ✅ Pruebas black-box de la API: 110 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
@@ -307,7 +328,8 @@ Decisiones:
 - ✅ `main` protegida con el ruleset "Proteger main": exige PR y el CI en verde (ver "Integración continua").
 - ✅ Reporte de Allure en GitHub Pages con historial, en `main` desde el PR #5 (2026-11-12): publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con el primer despliegue verificado.
 - ✅ Escenarios BDD de interfaz separados por navegador, en `main` desde el PR #6 (2026-11-12). Ver "Caso resuelto" en la sección de pruebas BDD. Verificado en el reporte publicado: 605 pruebas (antes 577) y ninguna repetida. El historial de Pages registra las dos corridas (577 → 605).
-- ⏳ Siguiente: cobertura de código. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
+- 🧪 Cobertura de código del backend (rama `feature/cobertura-backend`): 136 pruebas white-box y 100 % de líneas y ramas, con mínimo del 95 % en el CI y el HTML publicado en Pages (`/cobertura/`). Verificado en local, incluidas las mutaciones: `python scripts/pruebas.py todo --cobertura --allure` pasó 136 + 124 + 128 pruebas en Chromium y devolvió 0. Falta la primera corrida en GitHub, que serán 644 pruebas.
+- ⏳ Siguiente: JWT. Antes de implementarlo hay que decidir qué protege, porque hoy la API de consulta es abierta a propósito. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)

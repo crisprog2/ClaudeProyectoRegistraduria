@@ -16,3 +16,7 @@ pytest==9.2.0
 pytest-django==4.14.0
 # Resultados para el reporte de Allure (misma versión que en tests/requirements.txt)
 allure-pytest==2.16.2
+# Cobertura de código del backend (scripts/pruebas.py backend --cobertura; configuración en backend/.coveragerc).
+# coverage se fija también para que el porcentaje no cambie por una versión distinta.
+pytest-cov==7.1.0
+coverage==7.17.3

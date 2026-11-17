@@ -7,6 +7,7 @@ en local, en lugar de abrir una terminal por servidor.
 
     python scripts/pruebas.py base                     # migraciones y datos de demostración
     python scripts/pruebas.py backend                  # white-box (pytest-django)
+    python scripts/pruebas.py backend --cobertura      # además, cobertura de código del backend
     python scripts/pruebas.py api                      # API y BDD por la API
     python scripts/pruebas.py interfaz --browser firefox
     python scripts/pruebas.py todo --allure            # backend, api e interfaz seguidos
@@ -38,6 +39,8 @@ BACKEND = RAIZ / 'backend'
 FRONTEND = RAIZ / 'frontend'
 RESULTADOS_ALLURE = RAIZ / 'reportes' / 'allure-results'
 LOGS = RAIZ / 'reportes' / 'logs'
+# Reporte HTML de cobertura y coverage.xml. La configuración (qué se mide, el mínimo) está en backend/.coveragerc.
+COBERTURA = RAIZ / 'reportes' / 'cobertura'
 
 load_dotenv(RAIZ / '.env')
 API_BASE_URL = (os.environ.get('API_BASE_URL') or 'http://127.0.0.1:8000').rstrip('/')
@@ -165,10 +168,47 @@ def comando_base(args):
     return 0
 
 
+def opciones_cobertura(args):
+    """
+    Argumentos de pytest-cov: resumen en la terminal, HTML y coverage.xml en reportes/cobertura/.
+
+    Si la cobertura baja del mínimo (fail_under en backend/.coveragerc), pytest termina con error.
+    """
+    if not getattr(args, 'cobertura', False):
+        return []
+    return [
+        '--cov', '--cov-config=.coveragerc', '--cov-report=term-missing',
+        f'--cov-report=html:{COBERTURA}', f'--cov-report=xml:{COBERTURA / "coverage.xml"}',
+    ]
+
+
+def resumen_cobertura_en_github():
+    """
+    En GitHub Actions, agrega la tabla de cobertura al resumen de la corrida (Job Summary).
+
+    GITHUB_STEP_SUMMARY solo existe en el CI; en local no hace nada.
+    """
+    resumen = os.environ.get('GITHUB_STEP_SUMMARY')
+    if not resumen:
+        return
+    tabla = subprocess.run(
+        [sys.executable, '-m', 'coverage', 'report', '--format=markdown', '--rcfile=.coveragerc'],
+        cwd=BACKEND, capture_output=True, text=True,
+    ).stdout
+    with open(resumen, 'a', encoding='utf-8') as archivo:
+        archivo.write(f'## Cobertura del backend\n\n{tabla}\n')
+
+
 def comando_backend(args, limpiar=None):
-    """Pruebas white-box del backend; no necesitan servidores."""
+    """Pruebas white-box del backend; no necesitan servidores. Con --cobertura, mide la cobertura."""
     limpiar = args.limpiar_allure if limpiar is None else limpiar
-    return pytest(opciones_allure(args, limpiar), cwd=BACKEND)
+    if getattr(args, 'cobertura', False):
+        shutil.rmtree(COBERTURA, ignore_errors=True)
+    codigo = pytest([*opciones_allure(args, limpiar), *opciones_cobertura(args)], cwd=BACKEND)
+    if getattr(args, 'cobertura', False):
+        resumen_cobertura_en_github()
+        avisar(f'Reporte de cobertura: {(COBERTURA / "index.html").relative_to(RAIZ)}')
+    return codigo
 
 
 def comando_api(args):
@@ -220,6 +260,9 @@ def crear_parser():
         if nombre != 'base':
             sub.add_argument('--allure', action='store_true', help=f'guarda resultados en {RESULTADOS_ALLURE.relative_to(RAIZ)}')
             sub.add_argument('--limpiar-allure', action='store_true', help='borra los resultados anteriores (todo lo hace siempre)')
+        if nombre in ('backend', 'todo'):
+            sub.add_argument('--cobertura', action='store_true',
+                             help=f'mide la cobertura del backend; reporte en {COBERTURA.relative_to(RAIZ)}')
         if nombre in ('interfaz', 'todo'):
             sub.add_argument('--browser', action='append', choices=NAVEGADORES,
                              help='navegador; se puede repetir (por defecto, chromium)')
