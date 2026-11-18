@@ -31,6 +31,9 @@ CANALES_BDD = {'api': 'Por la API', 'interfaz': 'Por la interfaz'}
 # pytest-playwright guarda aquí su registro de artefactos y lo borra en el reporte de desmontaje.
 ATRIBUTO_ARTEFACTOS_PLAYWRIGHT = '_playwright_artifacts_recorder'
 PAQUETES_DEL_ENTORNO = ('pytest', 'pytest-bdd', 'playwright', 'allure-pytest', 'requests')
+# Fixtures de clientes HTTP cuya última petición se adjunta si la prueba falla. 'api' se comparte en
+# toda la corrida; 'cliente_sesion' es nuevo en cada prueba (guarda la cookie de la sesión).
+CLIENTES_API = ('api', 'cliente_sesion')
 
 
 def _carpetas(item):
@@ -128,8 +131,9 @@ def pytest_runtest_makereport(item, call):
     reporte = resultado.get_result()
 
     if reporte.when == 'call' and reporte.failed:
-        if item.funcargs.get('api') is not None:
-            _adjuntar_peticion_api(item.funcargs['api'])
+        for cliente in CLIENTES_API:
+            if item.funcargs.get(cliente) is not None:
+                _adjuntar_peticion_api(item.funcargs[cliente])
         if item.funcargs.get('page') is not None:
             _adjuntar_pagina(item.funcargs['page'])
 

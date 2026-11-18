@@ -5,7 +5,7 @@ Es la lógica común del CI: GitHub Actions lo llama desde .github/workflows/ci.
 y un Jenkinsfile o cualquier otra herramienta podría llamarlo igual. También sirve
 en local, en lugar de abrir una terminal por servidor.
 
-    python scripts/pruebas.py base                     # migraciones y datos de demostración
+    python scripts/pruebas.py base                     # migraciones, datos y usuarios de demostración
     python scripts/pruebas.py backend                  # white-box (pytest-django)
     python scripts/pruebas.py backend --cobertura      # además, cobertura de código del backend
     python scripts/pruebas.py api                      # API y BDD por la API
@@ -46,8 +46,10 @@ load_dotenv(RAIZ / '.env')
 API_BASE_URL = (os.environ.get('API_BASE_URL') or 'http://127.0.0.1:8000').rstrip('/')
 FRONTEND_BASE_URL = (os.environ.get('FRONTEND_BASE_URL') or 'http://localhost:5173').rstrip('/')
 
-# La suite black-box hace muchas consultas seguidas: con el límite normal (30/min) recibiría 429.
+# La suite black-box hace muchas consultas e inicios de sesión seguidos: con los límites normales
+# (30 consultas y 5 intentos por minuto) recibiría 429. Esos 429 se prueban en backend/tests/.
 LIMITE_CONSULTAS_PRUEBAS = '1000'
+LIMITE_INGRESOS_PRUEBAS = '1000'
 ESPERA_MAXIMA_SEGUNDOS = 90
 NAVEGADORES = ('chromium', 'firefox', 'webkit')
 
@@ -126,12 +128,13 @@ def servidor(nombre, comando, cwd, url, entorno=None):
 
 
 def backend_en_marcha():
-    """Servidor de Django con el límite de consultas alto que necesitan las pruebas black-box."""
+    """Servidor de Django con los límites altos que necesitan las pruebas black-box."""
     puerto = urlparse(API_BASE_URL).port or 8000
     host = urlparse(API_BASE_URL).hostname or '127.0.0.1'
     return servidor(
         'backend', [sys.executable, 'manage.py', 'runserver', f'{host}:{puerto}', '--noreload'],
-        BACKEND, API_BASE_URL + '/api/schema/', {'CONSULTA_LIMITE_POR_MINUTO': LIMITE_CONSULTAS_PRUEBAS},
+        BACKEND, API_BASE_URL + '/api/schema/',
+        {'CONSULTA_LIMITE_POR_MINUTO': LIMITE_CONSULTAS_PRUEBAS, 'INGRESO_LIMITE_POR_MINUTO': LIMITE_INGRESOS_PRUEBAS},
     )
 
 
@@ -159,8 +162,13 @@ def opciones_allure(args, limpiar=False):
 
 
 def comando_base(args):
-    """Aplica las migraciones y carga los datos de demostración (sobrescribe los registros del fixture)."""
-    for argumentos in (['migrate', '--noinput'], ['loaddata', 'datos_demo']):
+    """
+    Aplica las migraciones, carga los datos de demostración y crea los usuarios de demostración.
+
+    loaddata sobrescribe los registros del fixture. crear_usuarios_demo necesita
+    DEMO_ADMIN_CONTRASENA y DEMO_ANALISTA_CONTRASENA (el .env en local, el YAML en el CI).
+    """
+    for argumentos in (['migrate', '--noinput'], ['loaddata', 'datos_demo'], ['crear_usuarios_demo']):
         avisar(f'manage.py {" ".join(argumentos)}')
         codigo = subprocess.run([sys.executable, 'manage.py', *argumentos], cwd=BACKEND).returncode
         if codigo:
@@ -249,7 +257,7 @@ def crear_parser():
     parser = argparse.ArgumentParser(description=__doc__.split('\n\n')[0].strip(), formatter_class=argparse.RawDescriptionHelpFormatter)
     comandos = parser.add_subparsers(dest='comando', required=True)
     for nombre, funcion, ayuda in (
-        ('base', comando_base, 'migraciones y datos de demostración'),
+        ('base', comando_base, 'migraciones, datos y usuarios de demostración'),
         ('backend', comando_backend, 'pruebas white-box del backend'),
         ('api', comando_api, 'API y BDD por la API (levanta el backend)'),
         ('interfaz', comando_interfaz, 'BDD por la interfaz y E2E (levanta backend y frontend)'),

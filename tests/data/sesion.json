@@ -1,0 +1,15 @@
+{
+  "rutas": {
+    "ingresar": "/api/auth/ingresar/",
+    "refrescar": "/api/auth/refrescar/",
+    "salir": "/api/auth/salir/",
+    "sesion": "/api/auth/sesion/"
+  },
+  "metodo_permitido": {"ingresar": "POST", "refrescar": "POST", "salir": "POST", "sesion": "GET"},
+  "mensaje_metodo_no_permitido": {"POST": "Usa POST en esta ruta.", "GET": "Usa GET en esta ruta."},
+  "cookie": {"nombre": "consultavoto_refresco", "ruta": "/api/auth/", "samesite": "Strict", "max_age_maximo": 28800},
+  "cabecera_app": {"nombre": "X-Requested-With", "valor": "ConsultaVoto"},
+  "expira_en": 900,
+  "claves_respuesta_ingreso": ["acceso", "tipo", "expira_en", "usuario"],
+  "claves_usuario": ["usuario", "nombre", "rol"]
+}

@@ -33,6 +33,7 @@ Proyecto de **portafolio de un Quality Engineer**. El objetivo principal es most
   - `tests/e2e/` — Playwright para Python (pytest-playwright).
 - **Reportes**: Allure 3 (`reportes/`, Node) con resultados de `allure-pytest`. Ver la sección "Reporte de Allure".
 - **Cobertura**: pytest-cov (coverage.py) sobre el backend, con ramas y un mínimo del 95 %. Ver la sección "Cobertura de código".
+- **Autenticación**: JWT con djangorestframework-simplejwt 5.5.1 (PyJWT 2.15.1), token de refresco en una cookie HttpOnly, roles con los grupos de Django. Ver la sección "Autenticación y roles".
 - **CI**: GitHub Actions en `.github/workflows/ci.yml`, que llama a `scripts/pruebas.py`. Ver la sección "Integración continua".
 
 ## Diseño (Figma)
@@ -68,6 +69,7 @@ Bases compartidas agregadas al implementar (no son nodos del Figma): `AvisoCondi
 - La cédula viaja por **estado de navegación**, nunca en la URL.
 - La cédula se ingresa solo con dígitos y se **muestra formateada** con puntos (`1.098.765.432`).
 - Los estados de error (`FormError`, `ConsultaSinResultado`) están diseñados en Figma (frames `17:2`, `17:145`, `17:288`). El mensaje de formato inválido no menciona la longitud hasta que se defina la regla de la cédula.
+- **Roles (2026-11-18):** Ciudadano (sin cuenta), Administrador y Analista. La administración es una pantalla propia; el admin de Django queda solo para el superusuario. Detalles en "Autenticación y roles" y en `docs/decisiones/`.
 - **`backend/apps/consultas/models.py` es del usuario.** Lo escribió el usuario y se ajustó con revisión de Claude. Cualquier cambio estructural al modelo se propone y se aplica solo con su aprobación.
 
 ## Modelo de datos
@@ -96,7 +98,7 @@ Convenciones del modelo:
 
 ## Admin de Django
 
-`backend/apps/consultas/admin.py` registra los 6 modelos para revisar los datos de demostración:
+`backend/apps/consultas/admin.py` registra los 6 modelos para revisar los datos de demostración. Desde la fase 1, el admin solo admite al superusuario (`apps/cuentas/sitio_admin.py`, ADR 0003):
 - Listados con `list_select_related` (sin consultas por fila) y `autocomplete_fields` para las relaciones (el admin relacionado debe tener `search_fields`).
 - `PersonaAdmin`: columnas de edad calculada, puesto y "es jurado"; filtro propio `EsJuradoFilter` (sí/no); la designación se edita en la misma ficha (`DesignacionJuradoInline`, máximo 1).
 - `DesignacionJuradoAdmin`: columna "vota en la misma mesa".
@@ -128,9 +130,9 @@ Documentación: `/api/docs/` (Swagger UI) y `/api/schema/` (OpenAPI; YAML por de
 - Los docstrings de los serializadores se publican en Swagger: las notas internas van en comentarios.
 - Está siempre activa porque la API ya es abierta y los datos son ficticios; revisarlo si se despliega en un servidor público. Con `DEBUG=False` la página responde, pero Django no sirve sus archivos estáticos y se ve en blanco: un despliegue necesitaría `collectstatic` y un servidor de estáticos.
 
-Pruebas white-box (`backend/tests/`, 136): `test_admin.py` (listados, filtro "es jurado", columnas calculadas y consultas por fila; ver "Cobertura de código"), `test_manejador_errores.py`, `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool` y controlador PyMySQL). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché) y `consultar`. Se ejecutan con `cd backend; pytest`.
+Pruebas white-box (`backend/tests/`, 228): `test_autenticacion.py`, `test_roles_y_permisos.py` y `test_usuarios_demo.py` (ver "Autenticación y roles"), `test_admin.py` (listados, filtro "es jurado", columnas calculadas y consultas por fila; ver "Cobertura de código"), `test_manejador_errores.py`, `test_models.py` (`nombre_completo` y días límite de `calcular_edad`), `test_validators.py`, `test_services.py` (incluye "exactamente 1 consulta SQL"), `test_api_consulta.py` (JSON exacto de los casos del Figma, todos los errores, límite de consultas y X-Forwarded-For), `test_documentacion_api.py` (especificación válida y sin advertencias, sin CDN y 429 real contra el documentado) y `test_configuracion.py` (`env_bool` y controlador PyMySQL). `conftest.py`: `datos_demo`, `fecha_fija` (edad estable), `limpiar_cache` (autouse: el contador del límite vive en la caché), `consultar`, `crear_usuario` (con `CONTRASENA_PRUEBA`, que solo existe en la base de pruebas), `ingresar` y `cabecera_app`. Se ejecutan con `cd backend; pytest`.
 
-Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke`): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
+Pruebas black-box de la API (`tests/api/`, 144, marker `api`; incluye `test_autenticacion.py`, ver "Autenticación y roles"): pytest + requests contra el servidor en ejecución, sin importar nada de Django.
 - `test_consulta_cedula.py`: respuesta exacta de los 10 ciudadanos del fixture, reglas de los escenarios mínimos (misma mesa, otra mesa del mismo puesto, otro puesto, solo votante), espacios externos, contrato de claves y que no se expongan datos sensibles.
 - `test_validaciones_cedula.py`: 19 casos de cédula requerida, formato inválido y no encontrada, con código y mensaje exactos.
 - `test_protocolo_http.py`: 405 (con cabecera `Allow`), 415 y JSON que no es objeto.
@@ -141,10 +143,11 @@ Pruebas black-box de la API (`tests/api/`, 110, marker `api`; 22 también `smoke
 - Mutación verificada: exponer `genero` y aceptar 0 inicial hacen fallar la suite. También se detectan en la documentación: campo sin documentar, tipo distinto del real, código o ejemplo faltante, ejemplo desactualizado, mensaje cambiado, Swagger desde un CDN, nombre de la entidad real, sin aviso de datos ficticios y sin `Retry-After`.
 - El fixture `api` (cliente compartido por API y BDD) está en `tests/conftest.py`. Si no hay servidor, detiene la corrida con instrucciones.
 
-Pruebas BDD (`tests/bdd/`, tag `@bdd`; 14 escenarios por la API y 14 por la interfaz en cada navegador, 6 también `@smoke`): 3 features en lenguaje de negocio, sin HTTP ni pantallas. Los mismos features se ejecutan por dos canales: `step_defs/api/` (marker `api`) y `step_defs/interfaz/` (marker `e2e`). Cada carpeta tiene su `conftest.py` y su `common_steps.py`, porque los textos de los steps son iguales y sus implementaciones no deben mezclarse.
+Pruebas BDD (`tests/bdd/`, tag `@bdd`; 21 escenarios por la API y 14 por la interfaz en cada navegador): 4 features en lenguaje de negocio, sin HTTP ni pantallas. Los mismos features se ejecutan por dos canales: `step_defs/api/` (marker `api`) y `step_defs/interfaz/` (marker `e2e`). Cada carpeta tiene su `conftest.py` y su `common_steps.py`, porque los textos de los steps son iguales y sus implementaciones no deben mezclarse.
 - `consulta_lugar_votacion.feature`: solo votante y cédula con espacios externos.
 - `consulta_jurado.feature`: jurado en la misma mesa, en otra mesa del mismo puesto y en otro puesto.
 - `validaciones_cedula.feature`: sin cédula, esquema de formato inválido (7 ejemplos) y no registrada.
+- `inicio_sesion.feature` (fase 1, **solo por la API** hasta la fase 5): inicio de sesión por rol (esquema con 2 ejemplos), contraseña incorrecta, usuario inexistente, sin datos, la sesión se renueva y cerrar sesión. Sus steps están en `step_defs/api/test_inicio_sesion.py` y usan la fixture `cliente_sesion`.
 - Los "Dado" describen el tipo de ciudadano y toman el caso de `tests/data/ciudadanos.json`. Los mensajes del Figma y los ejemplos de cédulas inválidas van literales en el feature porque son la especificación.
 - El estado viaja entre steps en fixtures con `target_fixture` (`ciudadano` y, en la API, `respuesta`). En la interfaz, el estado es la propia página, a través de los Page Objects.
 - El feature usa el mensaje de la API ("No encontramos información para esta cédula."); el panel del Figma lo muestra sin punto, así que el step de interfaz ignora el punto final.
@@ -180,6 +183,113 @@ Pruebas E2E (`tests/e2e/`, 114 casos, marker `e2e`): Playwright contra el backen
 - `base_url` y la ventana de 1440x900 están en `tests/conftest.py`. La fixture `aplicacion_levantada` detiene la corrida con instrucciones si falta un servidor. El navegador se elige con `--browser` y `--headed` (no hay variables `BROWSER` ni `HEADLESS`).
 - Mutación verificada: cédula en la URL, quitar `DemoBanner`, conservar el estado al recargar, saltarse la validación del cliente, edad visible para el jurado, calles en todos los mapas, cédula sin puntos, nombre de la entidad real, salto que cambia la URL, sin foco al navegar, navegación sin `flex-wrap` (solo falla a 320 px) y contraste bajo (axe).
 - axe no evalúa el contraste de los placeholders, y tampoco detectó una mutación de texto blanco sobre fondo blanco.
+
+## Autenticación y roles
+
+Funcionalidad nueva, aprobada por el usuario el 2026-11-18. El usuario ya había construido este producto antes: él decide cómo debe quedar y aprueba cada fase. **Pidió documentar muy bien cada fase.** Las decisiones importantes van en un ADR en `docs/decisiones/` (ver "Convenciones").
+
+### Plan por fases (cada una en su rama y su pull request)
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Autenticación JWT y roles (backend) | 🧪 rama `feature/autenticacion-roles` |
+| 2 | Modelo `RegistroConsulta`: una fila por consulta, **sin cédula** (fecha y hora, resultado, género, ciudad y edad del día). **Cambia `models.py`: necesita la aprobación del usuario** | ⏳ |
+| 3 | API de administración: CRUD de las 6 entidades, asignar o quitar jurado, gestión de usuarios con las reglas del ADR 0001 | ⏳ |
+| 4 | API del reporte: total, no encontradas y conteos por género, rango de edad y ciudad, con filtro por ciudad; para el Analista y el Administrador | ⏳ |
+| 5 | Frontend: inicio de sesión, rutas protegidas, renovación del token y salir. Agrega el canal de interfaz de `inicio_sesion.feature` | ⏳ |
+| 6a | Frontend: administración de datos y jurados (`/administracion`) | ⏳ |
+| 6b | Frontend: gestión de usuarios | ⏳ |
+| 7 | Frontend: reporte (`/reportes`) con tortas de género y edad, barras por ciudad, total destacado y filtro por ciudad | ⏳ |
+
+### Decisiones aprobadas para las fases siguientes (2026-11-18)
+
+- **Reporte:**
+  - cuenta **todas** las consultas, también las repetidas;
+  - rangos de edad 18–30, 31–50 y mayores de 50; los bordes 30, 31, 50 y 51 son casos de prueba;
+  - tortas para el género y el rango de edad, barras para la ciudad, y el total destacado;
+  - filtro por ciudad: con una ciudad elegida se oculta la gráfica por ciudad y las no encontradas no aparecen (avisarlo en pantalla).
+- **Registro:** se cuentan también las consultas de **cédulas no encontradas**, que solo suman al total. No se registran el formato inválido ni el 429. La edad se guarda exacta y se agrupa en rangos al generar el reporte.
+- **Diseño:** las pantallas nuevas no están en Figma. Claude las diseña con el estilo actual y muestra capturas para que el usuario las apruebe. Se podrán ajustar cuando vuelva el cupo del MCP de Figma.
+
+### Fase 1: autenticación y roles (backend)
+
+App nueva `apps/cuentas`: no tiene modelos propios y **no toca `models.py`**. ADR [0001](docs/decisiones/0001-roles-y-administracion-propia.md), [0002](docs/decisiones/0002-tokens-en-memoria-y-cookie-httponly.md) y [0003](docs/decisiones/0003-admin-de-django-solo-superusuario.md).
+
+| Archivo | Contenido |
+|---|---|
+| `roles.py` | `ADMINISTRADOR`, `ANALISTA`, `ROLES` y `rol_de(usuario)`. Lee el rol de la base en cada llamada. Devuelve `None` si el usuario no existe, está inactivo, es superusuario o no tiene grupo de rol. Si está en los dos grupos, se le trata como administrador |
+| `migrations/0001_grupos.py` | Migración de datos: crea los grupos `Administrador` y `Analista`. Los nombres se escriben literales, sin importarlos de `roles.py` |
+| `permissions.py` | `TieneRol` (base), `TieneRolEnLaApp`, `EsAdministrador` y `EsAnalistaOAdministrador`. Las usarán las fases 3 y 4 |
+| `services.py` | `iniciar_sesion`, `renovar_sesion` y `cerrar_sesion`, más la dataclass `Sesion` |
+| `cookies.py` | Leer, poner y borrar la cookie del token de refresco |
+| `excepciones.py` | `ErrorConCodigo` y sus subclases `DatosIncompletos`, `CredencialesInvalidas`, `SesionExpirada` y `SolicitudRechazada`, más las tuplas `DEMASIADOS_INTENTOS`, `USA_POST` y `USA_GET`, que comparten las vistas y `esquema.py` |
+| `views.py`, `serializers.py`, `esquema.py`, `urls.py` | Los 4 endpoints y su documentación en Swagger (etiqueta "Sesión") |
+| `throttles.py` | `IngresoRateThrottle` (tasa `ingreso`) |
+| `sitio_admin.py` | `SitioAdminSoloSuperusuario` y `AdminSoloSuperusuarioConfig`, que reemplaza a `django.contrib.admin` en `INSTALLED_APPS`. No va en `apps.py` porque Django no admite dos configuraciones de app en el mismo `apps.py` (`RuntimeError: declares more than one default AppConfig`) |
+| `management/commands/crear_usuarios_demo.py` | Crea o actualiza `admin.demo` y `analista.demo` con `DEMO_ADMIN_CONTRASENA` y `DEMO_ANALISTA_CONTRASENA`. Valida las dos contraseñas antes de tocar la base y nunca las muestra. Es idempotente: deja a los usuarios activos, sin `is_staff` ni superusuario y con un solo grupo |
+
+**Endpoints** (`/api/auth/`, montado antes que `api/` en `config/urls.py`; es también la ruta de la cookie):
+
+| Ruta | Detalle |
+|---|---|
+| `POST ingresar/` `{"usuario", "contrasena"}` | Sin autenticación, solo JSON y con el límite `ingreso`. Quita los espacios externos del usuario. Responde `{"acceso", "tipo": "Bearer", "expira_en": 900, "usuario": {"usuario", "nombre", "rol"}}` y pone la cookie |
+| `POST refrescar/` | Sin cuerpo. Exige la cabecera `X-Requested-With: ConsultaVoto` y la cookie. Revoca el token anterior y entrega uno nuevo con el **mismo `exp`** |
+| `POST salir/` | Exige la cabecera. Revoca el token si es válido y borra la cookie. Siempre responde 204 |
+| `GET sesion/` | JWT, con `IsAuthenticated` y `TieneRolEnLaApp`. Devuelve `{"usuario", "nombre", "rol"}` |
+
+**Errores nuevos** (todos con `{"codigo", "mensaje"}`):
+- 400 `DATOS_INCOMPLETOS`;
+- 401 `CREDENCIALES_INVALIDAS`: el mismo para un usuario inexistente, una contraseña incorrecta, un usuario desactivado, sin rol o superusuario;
+- 401 `SESION_EXPIRADA`;
+- 401 `NO_AUTENTICADO` y `TOKEN_INVALIDO`;
+- 403 `SIN_PERMISO` y `SOLICITUD_RECHAZADA`;
+- 405 `METODO_NO_PERMITIDO` con "Usa POST en esta ruta." o "Usa GET en esta ruta.";
+- 429 `DEMASIADOS_INTENTOS`, con `Retry-After`.
+
+Los mensajes están en `tests/data/mensajes_error.json`.
+
+**Manejador central** (`apps/consultas/exceptions.py`). Elige el código en este orden:
+1. el `codigo` propio de la excepción (`ErrorConCodigo`);
+2. `errores_drf` de la vista, para textos propios por ruta;
+3. `ERRORES_DRF`, que ahora incluye `NotAuthenticated`, `AuthenticationFailed` (y con ella `InvalidToken` de simplejwt) y `PermissionDenied`;
+4. `ERROR_DE_SOLICITUD`.
+
+El 405 de la consulta sigue diciendo "Usa POST para consultar.".
+
+**Configuración** (`settings/base.py`):
+- `DEFAULT_AUTHENTICATION_CLASSES = [JWTAuthentication]`. La consulta conserva `authentication_classes = []`: un token basura no la rompe, y hay una prueba de eso.
+- **`SIMPLE_JWT`:** acceso de 15 minutos, refresco de 8 horas, HS256 con `SECRET_KEY` y `CHECK_USER_IS_ACTIVE`.
+- **`JWT_COOKIE`:** nombre `consultavoto_refresco`, ruta `/api/auth/`, `SameSite=Strict` y `SECURE` según `env_bool('JWT_COOKIE_SECURE')`.
+- **Otros:** `CABECERA_APP`, la tasa `ingreso` (`INGRESO_LIMITE_POR_MINUTO`, 5 por defecto) y la app `rest_framework_simplejwt.token_blacklist`.
+- **`settings/test.py`:** fija `ingreso` en 5/min y `SECURE` en falso.
+
+**Hallazgos durante la implementación:**
+- **La rotación de simplejwt** (`TokenRefreshSerializer`) llama a `set_exp()`: con cada renovación la sesión se alargaría sin fin. Además hace `objects.get()` sobre el usuario, y si fue borrado da un 500. Por eso `renovar_sesion()` usa las piezas de simplejwt (`RefreshToken`, `blacklist`, `set_jti`, `set_iat` y `outstand`) sin `set_exp()`. Así la sesión dura como máximo 8 horas desde el inicio.
+- **DRF revisa la autenticación antes que el método:** `POST /api/auth/sesion/` sin token da 401, no 405. Para probar el 405 hay que enviar un token válido.
+- **Las cookies en el cliente de pruebas:** el cliente `api` de las pruebas black-box se comparte en toda la sesión de pytest, así que la cookie de una prueba pasaría a otra. Por eso existe la fixture `cliente_sesion` (`tests/support/sesion_client.py`), nueva en cada prueba.
+- **Límites conocidos:**
+  - el token de acceso sigue siendo válido hasta que vence (15 minutos como máximo) después de cerrar sesión;
+  - `JWT_COOKIE_SECURE` debe ser `true` en cualquier despliegue con HTTPS.
+
+**Pruebas de la fase 1:**
+- **White-box, 92 nuevas (el backend pasa de 136 a 228), con 100 % de cobertura:**
+  - `test_autenticacion.py` (56): cada atributo de la cookie, el token de refresco fuera del JSON, los 5 fallos de inicio de sesión con la misma respuesta, datos incompletos, 415 y 405, el límite de intentos y que `X-Forwarded-For` no lo evade, rotación, revocación, vencimiento conservado, usuario borrado, desactivado o sin rol al refrescar, la cabecera propia, cerrar sesión, tokens falsificados (vencido, firma alterada, otra clave, `alg: none` y token de refresco), el efecto inmediato y la consulta pública con un token basura;
+  - `test_roles_y_permisos.py`;
+  - `test_usuarios_demo.py`;
+  - `test_manejador_errores.py`, ampliado.
+- **Black-box:**
+  - `tests/api/test_autenticacion.py` y 6 pruebas de documentación de la sesión en `test_documentacion_api.py`. La API pasa de 110 a 144;
+  - `tests/bdd/features/inicio_sesion.feature`, con 7 escenarios por la API (la BDD por la API pasa de 14 a 21).
+  - **Datos:** `tests/data/usuarios.json` (sin contraseñas: dice qué variable usar), `credenciales_invalidas.json` y `sesion.json`.
+  - **Soporte:** `config.contrasena_demo()`, `openapi.EspecificacionOpenApi.de(ruta, metodo)` y `cabeceras_respuesta()`. El plugin de Allure adjunta también la última respuesta de `cliente_sesion` (`CLIENTES_API`).
+- **Mutaciones:**
+  - **12 en el backend, todas detectadas:** cookie sin `HttpOnly` o con `SameSite=Lax`, token de refresco en el JSON, mensaje distinto para un usuario inexistente, rotación sin revocar, rotación con `set_exp`, rol tomado del token, superusuario con acceso, `CHECK_USER_IS_ACTIVE` apagado, admin abierto a `is_staff`, sin límite de intentos y sin la cabecera.
+  - **5 contra el servidor real, todas detectadas:** sin `HttpOnly`, rotación sin revocar, salir sin revocar, sin la cabecera y mensaje cambiado.
+  - **Dos debilidades que encontraron las mutaciones y se corrigieron:**
+    1. La primera versión de la prueba del vencimiento comparaba dos tokens creados en el mismo segundo y no notaba `set_exp()`. Ahora el token original vence en 1 hora.
+    2. La primera mutación del "token en el JSON" no era un defecto real, porque el serializador descarta los campos que no declara.
+- **Verificado en local (2026-11-18):** `python scripts/pruebas.py todo --allure --cobertura` pasó 228 + 165 + 128 pruebas (Chromium), con 100 % de cobertura, y devolvió 0. Se usaron contraseñas de demostración **temporales**, solo en el proceso de la corrida. Después el usuario agregó las suyas al `.env`, se corrió `base` y las 165 pruebas de API y BDD pasaron con ellas.
+- **Base local:** `base` aplicó las migraciones `cuentas.0001_grupos` y `token_blacklist` (0001 a 0013) y creó `admin.demo` y `analista.demo`.
 
 ## Reporte de Allure
 
@@ -229,10 +339,10 @@ Solo del backend, medida con las pruebas white-box (fase 1). `pytest-cov` 7.1.0 
 `.github/workflows/ci.yml` (GitHub Actions) corre en cada pull request y push a `main`, y a mano (`workflow_dispatch`).
 - **Trabajos:** `backend` (con `--cobertura`: falla si baja del 95 % y guarda el artefacto `cobertura-backend`), `api` (API y BDD por la API), `frontend` (`npm run build`), `interfaz` (matriz chromium/firefox/webkit, `fail-fast: false`) y `reporte`. Este último junta los `allure-results-*` con `download-artifact` (`merge-multiple`), genera el reporte con `reportes/` y lo publica como artefacto `reporte-allure`, aunque haya fallas (`if: !cancelled()`). También incluye el reporte de cobertura en `allure-report/cobertura/`. En los push a `main`, además, descarga el historial publicado, lo incluye en el sitio y prepara el artefacto de Pages. El trabajo `publicar` lo despliega.
 - **Lógica en `scripts/pruebas.py`, no en el YAML:** comandos `base`, `backend`, `api`, `interfaz` y `todo`, con `--allure`, `--limpiar-allure`, `--cobertura` (solo `backend` y `todo`) y `--browser` (repetible). Levanta los servidores que necesita, espera a que respondan, los apaga siempre (en Windows cierra el árbol de procesos de npm con `taskkill /T`) y devuelve el código de pytest. Se detiene si el puerto ya está ocupado. Solo usa la biblioteca estándar y python-dotenv. Así, un futuro Jenkinsfile o el uso local llaman a lo mismo.
-- **`base` no corre solo:** carga `datos_demo` y sobrescribe esos registros, así que en local se llama a mano. En CI cada trabajo lo llama sobre un contenedor nuevo.
+- **`base` no corre solo:** carga `datos_demo` y sobrescribe esos registros, y además aplica las migraciones y crea los usuarios de demostración (`crear_usuarios_demo`), así que en local se llama a mano. En CI cada trabajo lo llama sobre un contenedor nuevo.
 - **MySQL:** servicio `mysql:8.0` por trabajo, definido una vez con un ancla YAML (`&mysql` / `*mysql`; GitHub admite anclas desde 2025-09, pero no claves de combinación). Las claves están escritas en el YAML porque solo valen en ese contenedor temporal. `services` no puede leer el contexto `env`, así que ahí van literales.
 - **`.github/actions/preparar-entorno`** (acción compuesta): instala Python con caché de pip, genera `DJANGO_SECRET_KEY` (enmascarada) y da permisos sobre `test_registraduria` conectándose como root con PyMySQL. Sin ese permiso, pytest-django no podría crear la base de pruebas.
-- **Configuración:** Python 3.11, Node 26, `DJANGO_DEBUG=true` (Swagger necesita sus estáticos). El script fija `CONSULTA_LIMITE_POR_MINUTO=1000` para el backend que levanta.
+- **Configuración:** Python 3.11, Node 26, `DJANGO_DEBUG=true` (Swagger necesita sus estáticos), `DEMO_ADMIN_CONTRASENA` y `DEMO_ANALISTA_CONTRASENA` (valores solo para el CI, como las claves de MySQL) y `JWT_COOKIE_SECURE=false`. El script fija `CONSULTA_LIMITE_POR_MINUTO=1000` e `INGRESO_LIMITE_POR_MINUTO=1000` para el backend que levanta.
 - **Seguridad:** `permissions: contents: read`, acciones fijadas por versión exacta (`checkout` v7.0.1, `setup-python` v7.1.0, `setup-node` v7.1.0, `upload-artifact` v7.0.2, `download-artifact` v8.0.2), `concurrency` cancela la corrida anterior solo en las ramas de pull request (`cancel-in-progress` es falso en `main`, para no cortar una publicación ni perder un punto del historial).
 - **Máquinas fijadas en `ubuntu-24.04`**, no `ubuntu-latest`: en la primera corrida (2026-11-11, PR de `feature/pipeline-ci`) `ubuntu-latest` ya era Ubuntu 26.04 ("resolute") y `playwright install --with-deps` falló con "Temporary failure resolving 'archive.ubuntu.com'" tras unos 11 minutos. Firefox y WebKit se cortaron a los 30 minutos. pip y npm sí descargaron. Fijar la versión además evita que el CI cambie de sistema sin aviso. En la segunda corrida, ya en 24.04 y con 3 reintentos, falló igual ("Temporary failure resolving 'azure.archive.ubuntu.com'") y se cortó a los 30 minutos, con GitHub reportando todo operativo. Conclusión: las máquinas no resuelven los servidores de paquetes de Ubuntu, sea cual sea la versión.
 - **Trabajos de interfaz dentro de `mcr.microsoft.com/playwright/python:v1.64.1-noble`** (imagen oficial de Playwright, misma versión que `tests/requirements.txt`): trae los navegadores y sus librerías, así que no usan `apt`. Opciones `--ipc=host` (recomendado para Chromium). Dentro del contenedor MySQL se alcanza como `mysql` (`MYSQL_HOST: mysql` en ese trabajo). Si se actualiza Playwright, hay que actualizar también la etiqueta de la imagen.
@@ -294,6 +404,10 @@ Decisiones:
 - **Documentación del código**: docstring en cada módulo, clase y función pública, en español. En el frontend: comentario inicial en cada archivo JS y CSS, y JSDoc en cada componente y función. Los `__str__` llevan un ejemplo del texto que producen. Las clases `Meta` no necesitan docstring. En pruebas, el nombre `test_*` describe el caso; el docstring solo se agrega cuando la intención no es obvia.
 - **Pruebas que importan**: cuando una prueba protege una regla de seguridad o de negocio, comprobar al menos una vez que falla si se reintroduce el defecto (prueba de mutación), no solo que pasa.
 - **Cobertura**: el código nuevo del backend llega con sus pruebas; si la cobertura baja del 95 %, el CI no deja fusionar. Excluir un archivo de la medición o bajar el mínimo solo con un motivo escrito en `backend/.coveragerc` y en el pull request.
+- **Decisiones de arquitectura (ADR)**: cada decisión importante va en `docs/decisiones/NNNN-titulo.md`, con estado, fecha, aprobación, contexto, opciones, decisión, consecuencias y "Cómo se verifica". Hay que agregarla a la tabla cronológica de `docs/decisiones/README.md`. Un ADR no se borra: si la decisión cambia, otro lo reemplaza.
+  - El número es el orden en que se escribió, no la fecha de la decisión. 0001 a 0003 son de la fase 1 de roles. 0004 a 0022 son **retroactivos**: el 2026-11-18, a pedido del usuario, se documentaron todas las decisiones desde el inicio del proyecto, con `CLAUDE.md`, el README y el historial de Git, y cada uno cita sus commits. **El siguiente libre es 0023.**
+  - Si una sección de este archivo cambia una decisión que tiene ADR, hay que actualizar también el ADR, o reemplazarlo con uno nuevo.
+- **Fases de roles y acceso**: antes de cada fase, mostrar el detalle y esperar la aprobación del usuario. Al terminarla, documentarla a fondo (README, `CLAUDE.md` y sus ADR).
 - **Al terminar una tarea**: actualizar la sección "Estado" de este archivo y, si cambia algo visible para quien usa el repo, el README (tabla "Estado del proyecto" y "Ejecución").
 
 ## Estado
@@ -309,7 +423,7 @@ Decisiones:
 - ✅ Superusuario local creado por el usuario (no compartir ni registrar su contraseña).
 - ✅ Figma actualizado: marca ConsultaVoto en las 3 pantallas, aviso neutro del votante y 3 pantallas de estados de error. Fixture alineado con el Figma (cédula `1023456789`).
 - ✅ API REST de consulta (`POST /api/consulta/`) con manejador central de errores y límite de consultas por IP.
-- ✅ Pruebas white-box del backend: 97 pasan contra MySQL; mutación de `NUM_PROXIES` detectada. Con la cobertura (2026-11-17) son 136.
+- ✅ Pruebas white-box del backend: 97 pasan contra MySQL; mutación de `NUM_PROXIES` detectada. Con la cobertura (2026-11-17) son 136, y con la fase 1 de roles, 228.
 - ✅ Límite de consultas configurable con `CONSULTA_LIMITE_POR_MINUTO`.
 - ✅ Pruebas black-box de la API: 110 pasan contra `runserver`; datos en `tests/data/`; mutaciones detectadas.
 - ✅ Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos pasan contra la API; mutaciones detectadas.
@@ -328,8 +442,9 @@ Decisiones:
 - ✅ `main` protegida con el ruleset "Proteger main": exige PR y el CI en verde (ver "Integración continua").
 - ✅ Reporte de Allure en GitHub Pages con historial, en `main` desde el PR #5 (2026-11-12): publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con el primer despliegue verificado.
 - ✅ Escenarios BDD de interfaz separados por navegador, en `main` desde el PR #6 (2026-11-12). Ver "Caso resuelto" en la sección de pruebas BDD. Verificado en el reporte publicado: 605 pruebas (antes 577) y ninguna repetida. El historial de Pages registra las dos corridas (577 → 605).
-- 🧪 Cobertura de código del backend (rama `feature/cobertura-backend`): 136 pruebas white-box y 100 % de líneas y ramas, con mínimo del 95 % en el CI y el HTML publicado en Pages (`/cobertura/`). Verificado en local, incluidas las mutaciones: `python scripts/pruebas.py todo --cobertura --allure` pasó 136 + 124 + 128 pruebas en Chromium y devolvió 0. Falta la primera corrida en GitHub, que serán 644 pruebas.
-- ⏳ Siguiente: JWT. Antes de implementarlo hay que decidir qué protege, porque hoy la API de consulta es abierta a propósito. Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
+- ✅ Cobertura de código del backend, en `main` desde el PR #8 (2026-11-17): 100 % de líneas y ramas, con un mínimo del 95 % en el CI. Confirmado en la corrida sobre `main`: 644 pruebas y el reporte publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/ (342 líneas y 24 ramas, 100 %).
+- 🧪 Roles y acceso, fase 1 de 8 (rama `feature/autenticacion-roles`): JWT, roles, `/admin/` solo para el superusuario, usuarios de demostración y 22 ADR (3 de la fase y 19 retroactivos, desde el inicio del proyecto). Verificado en local: 228 + 165 + 128 pruebas, 100 % de cobertura y 17 mutaciones detectadas. Falta la corrida en GitHub, que serán 777 pruebas. El usuario ya agregó `DEMO_ADMIN_CONTRASENA` y `DEMO_ANALISTA_CONTRASENA` a su `.env`; `base` actualizó los usuarios, y las 165 pruebas de API y BDD pasaron con sus contraseñas.
+- ⏳ Siguiente: fase 2 (registro de consultas, con un cambio en `models.py` que el usuario debe aprobar). Ver el plan en "Autenticación y roles". Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
 ## Datos de demostración (`datos_demo.json`)

@@ -6,6 +6,13 @@ Todas las respuestas de error tienen el mismo formato:
 
 El frontend y las pruebas se basan en `codigo` (estable); `mensaje` es el
 texto que se muestra al usuario.
+
+Cómo se elige el código de un error de DRF, en este orden:
+1. Si la excepción trae su propio `codigo` (errores de apps/cuentas/excepciones.py).
+2. Si la vista define `errores_drf`, sus textos para ese tipo de error. Así cada ruta
+   puede tener su mensaje, p. ej. el 405 de la consulta dice "Usa POST para consultar."
+3. ERRORES_DRF, los textos comunes de la API.
+4. ERROR_DE_SOLICITUD con el texto de DRF, para cualquier otro error.
 """
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import exceptions, status
@@ -22,6 +29,10 @@ ERRORES_DRF = {
     exceptions.MethodNotAllowed: ('METODO_NO_PERMITIDO', 'Usa POST para consultar.'),
     exceptions.ParseError: ('SOLICITUD_INVALIDA', 'La solicitud no tiene un formato válido.'),
     exceptions.UnsupportedMediaType: ('SOLICITUD_INVALIDA', 'La solicitud no tiene un formato válido.'),
+    # Autenticación con JWT (apps/cuentas). InvalidToken de simplejwt hereda de AuthenticationFailed.
+    exceptions.NotAuthenticated: ('NO_AUTENTICADO', 'Inicia sesión para continuar.'),
+    exceptions.AuthenticationFailed: ('TOKEN_INVALIDO', 'Tu sesión no es válida o venció. Inicia sesión de nuevo.'),
+    exceptions.PermissionDenied: ('SIN_PERMISO', 'No tienes permiso para realizar esta acción.'),
 }
 
 
@@ -41,9 +52,16 @@ def manejador_de_errores(exc, context):
     if respuesta is None:
         return None  # Error no controlado: Django responde 500.
 
-    codigo, mensaje = next(
-        (valor for tipo, valor in ERRORES_DRF.items() if isinstance(exc, tipo)),
-        ('ERROR_DE_SOLICITUD', str(getattr(exc, 'detail', 'No se pudo procesar la solicitud.'))),
-    )
-    respuesta.data = {'codigo': codigo, 'mensaje': mensaje}
+    respuesta.data = dict(zip(('codigo', 'mensaje'), _codigo_y_mensaje(exc, context)))
     return respuesta
+
+
+def _codigo_y_mensaje(exc, context):
+    """(codigo, mensaje) de un error de DRF, según el orden descrito en el docstring del módulo."""
+    if getattr(exc, 'codigo', None):
+        return exc.codigo, str(exc.detail)
+    propios = getattr(context.get('view'), 'errores_drf', {})
+    for tipo, valor in (*propios.items(), *ERRORES_DRF.items()):
+        if isinstance(exc, tipo):
+            return valor
+    return 'ERROR_DE_SOLICITUD', str(getattr(exc, 'detail', 'No se pudo procesar la solicitud.'))

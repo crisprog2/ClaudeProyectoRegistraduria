@@ -23,3 +23,16 @@ TIMEOUT_SEGUNDOS = 10
 
 # Zona horaria del servidor (TIME_ZONE de Django): define el "hoy" con el que se calcula la edad.
 ZONA_HORARIA_SERVIDOR = 'America/Bogota'
+
+
+def contrasena_demo(variable):
+    """
+    Contraseña de un usuario de demostración, leída de su variable de entorno.
+
+    Son las mismas que usa 'manage.py crear_usuarios_demo' para crear los usuarios. Nunca
+    van en los datos de prueba: tests/data/usuarios.json solo dice qué variable usar.
+    """
+    contrasena = os.environ.get(variable)
+    if not contrasena:
+        raise RuntimeError(f'Falta {variable} en el .env: es la contraseña de un usuario de demostración.')
+    return contrasena

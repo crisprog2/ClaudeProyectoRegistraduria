@@ -1,0 +1,10 @@
+[
+  {"id": "usuario_inexistente", "cuerpo": {"usuario": "no.existe", "contrasena": "Una-Clave-Cualquiera-2026"}, "http": 401, "codigo": "CREDENCIALES_INVALIDAS"},
+  {"id": "contrasena_incorrecta", "cuerpo": {"usuario": "analista.demo", "contrasena": "Una-Clave-Incorrecta-2026"}, "http": 401, "codigo": "CREDENCIALES_INVALIDAS", "smoke": true},
+  {"id": "cuerpo_vacio", "cuerpo": {}, "http": 400, "codigo": "DATOS_INCOMPLETOS"},
+  {"id": "sin_contrasena", "cuerpo": {"usuario": "analista.demo"}, "http": 400, "codigo": "DATOS_INCOMPLETOS"},
+  {"id": "sin_usuario", "cuerpo": {"contrasena": "Una-Clave-Cualquiera-2026"}, "http": 400, "codigo": "DATOS_INCOMPLETOS"},
+  {"id": "textos_vacios", "cuerpo": {"usuario": "", "contrasena": ""}, "http": 400, "codigo": "DATOS_INCOMPLETOS"},
+  {"id": "valores_nulos", "cuerpo": {"usuario": null, "contrasena": null}, "http": 400, "codigo": "DATOS_INCOMPLETOS"},
+  {"id": "usuario_numerico", "cuerpo": {"usuario": 12345, "contrasena": "Una-Clave-Cualquiera-2026"}, "http": 400, "codigo": "DATOS_INCOMPLETOS"}
+]

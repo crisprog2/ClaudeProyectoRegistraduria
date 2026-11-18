@@ -11,6 +11,11 @@ python-dotenv==1.2.4
 drf-spectacular==0.30.0
 drf-spectacular-sidecar==2026.10.1
 
+# Inicio de sesión con JWT (apps/cuentas; ver docs/decisiones/0002). PyJWT se fija también:
+# firma y verifica los tokens, y las pruebas lo usan para fabricar tokens falsificados.
+djangorestframework-simplejwt==5.5.1
+PyJWT==2.15.1
+
 # Pruebas white-box del backend
 pytest==9.2.0
 pytest-django==4.14.0
