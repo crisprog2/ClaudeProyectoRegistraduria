@@ -4,5 +4,13 @@
   "CEDULA_NO_ENCONTRADA": "No encontramos información para esta cédula.",
   "METODO_NO_PERMITIDO": "Usa POST para consultar.",
   "SOLICITUD_INVALIDA": "La solicitud no tiene un formato válido.",
-  "DEMASIADAS_CONSULTAS": "Hiciste demasiadas consultas. Intenta de nuevo en unos segundos."
+  "DEMASIADAS_CONSULTAS": "Hiciste demasiadas consultas. Intenta de nuevo en unos segundos.",
+  "DATOS_INCOMPLETOS": "Escribe tu usuario y tu contraseña.",
+  "CREDENCIALES_INVALIDAS": "Usuario o contraseña incorrectos.",
+  "DEMASIADOS_INTENTOS": "Hiciste demasiados intentos. Espera un minuto e inténtalo de nuevo.",
+  "SESION_EXPIRADA": "Tu sesión terminó. Inicia sesión de nuevo.",
+  "SOLICITUD_RECHAZADA": "La solicitud no proviene de la aplicación.",
+  "NO_AUTENTICADO": "Inicia sesión para continuar.",
+  "TOKEN_INVALIDO": "Tu sesión no es válida o venció. Inicia sesión de nuevo.",
+  "SIN_PERMISO": "No tienes permiso para realizar esta acción."
 }

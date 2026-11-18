@@ -14,12 +14,54 @@ Aplicación web full stack de consulta electoral, construida como **sistema bajo
 - La app muestra su **lugar de votación**: puesto, dirección, ciudad, departamento y mesa.
 - Si el ciudadano fue designado **jurado de votación**, muestra además su asignación: rol, puesto y mesa de servicio.
 - Maneja los casos de **campo vacío**, **formato inválido** y **cédula no encontrada**.
+- **Administrador y Analista** inician sesión para administrar los datos y ver un reporte de las consultas (en construcción por fases; ver "Roles y acceso").
+
+## Roles y acceso
+
+ConsultaVoto tiene tres tipos de usuario. El plan completo se construye por fases (ver "Estado del proyecto").
+
+| Rol | Qué hace | Cómo entra | Estado |
+|---|---|---|---|
+| Ciudadano | Consulta su lugar de votación | Sin cuenta | ✅ |
+| **Administrador** | Edita los datos (departamentos, ciudades, puestos, mesas, personas y jurados), gestiona usuarios y ve el reporte | Inicia sesión | 🔐 Inicio de sesión listo; las pantallas llegan en las fases siguientes |
+| **Analista** | Ve el reporte de consultas por género, ciudad y rango de edad | Inicia sesión | 🔐 Igual |
+
+- **Dónde se guardan los usuarios:** en la misma base MySQL, en las tablas que trae Django (`auth_user`, `auth_group` y `auth_user_groups`). Las contraseñas nunca se guardan tal cual: se cifran con PBKDF2-SHA256, un millón de iteraciones y una sal aleatoria por usuario. Los roles `Administrador` y `Analista` son grupos de Django que crea una migración.
+- **El superusuario** solo entra al admin de Django (`/admin/`), que es una herramienta interna de soporte. No tiene rol en la aplicación, y ningún otro usuario puede entrar al admin de Django.
+- **Usuarios de demostración:** `admin.demo` (Administrador) y `analista.demo` (Analista), con contraseñas que define cada quien en su `.env` (paso 3).
+- **Por qué se decidió así:** cada decisión importante del proyecto, desde el primer día, tiene su documento en [`docs/decisiones/`](docs/decisiones/README.md).
+
+### Seguridad de la sesión
+
+Al iniciar sesión, el servidor entrega dos tokens JWT:
+
+- **De acceso:** dura 15 minutos y acompaña cada petición protegida.
+- **De refresco:** sirve para pedir un token de acceso nuevo sin volver a escribir la contraseña. La sesión dura como máximo 8 horas.
+
+**Dónde los guarda el navegador, y por qué:**
+
+| Token | Dónde | Por qué |
+|---|---|---|
+| De acceso | En la memoria de la página | Desaparece al cerrarla y dura poco |
+| De refresco | En una cookie `HttpOnly` | **JavaScript no puede leerla.** Si alguien lograra inyectar código en la página (un ataque XSS), no podría llevarse la sesión para usarla desde otro equipo |
+
+La alternativa más común, guardar los dos tokens en `localStorage`, es más simple. Pero ante un XSS entrega la sesión completa al atacante durante horas, aunque el usuario cierre la página. La explicación completa, con las opciones comparadas y los límites conocidos, está en el [ADR 0002](docs/decisiones/0002-tokens-en-memoria-y-cookie-httponly.md).
+
+Otras protecciones:
+
+- **Peticiones falsificadas desde otro sitio (CSRF):** la cookie lleva `SameSite=Strict`, y renovar o cerrar la sesión exige la cabecera `X-Requested-With: ConsultaVoto`, que un sitio ajeno no puede enviar.
+- **Rotación:** cada renovación revoca el token de refresco anterior. Cerrar sesión también lo revoca, así que una copia ya no sirve.
+- **Mismo error para todo fallo de inicio de sesión:** un usuario inexistente, una contraseña incorrecta o una cuenta sin acceso reciben el mismo mensaje, para que nadie pueda averiguar qué usuarios existen.
+- **Límite de intentos:** 5 por minuto desde la misma IP.
+- **Efecto inmediato:** el rol se revisa en la base de datos en cada petición. Desactivar a un usuario o quitarle el rol le quita el acceso al instante.
+- **Despliegue:** en un servidor con HTTPS hay que poner `JWT_COOKIE_SECURE=true`, para que la cookie solo viaje cifrada.
 
 ## Stack
 
 | Capa | Tecnología |
 |------|------------|
 | Backend | Python 3.11, Django 5.2 LTS, Django REST Framework |
+| Autenticación | JWT con djangorestframework-simplejwt; token de refresco en cookie HttpOnly |
 | Documentación de la API | OpenAPI 3.1 y Swagger UI (drf-spectacular) |
 | Base de datos | MySQL 8.0 con el controlador PyMySQL |
 | Frontend | React + Vite |
@@ -122,6 +164,27 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | 405 | `METODO_NO_PERMITIDO` | Método distinto de POST |
 | 429 | `DEMASIADAS_CONSULTAS` | Más de 30 consultas por minuto desde la misma IP (configurable con `CONSULTA_LIMITE_POR_MINUTO`) |
 
+### Sesión (`/api/auth/`)
+
+| Ruta | Qué hace | Respuesta |
+|---|---|---|
+| `POST /api/auth/ingresar/` con `{"usuario", "contrasena"}` | Inicia sesión | 200 con `{"acceso", "tipo", "expira_en", "usuario": {"usuario", "nombre", "rol"}}`; el token de refresco va **solo** en la cookie |
+| `POST /api/auth/refrescar/` | Renueva el token de acceso con la cookie (y la rota) | 200, igual que ingresar. Exige la cabecera `X-Requested-With: ConsultaVoto` |
+| `POST /api/auth/salir/` | Revoca el token de refresco y borra la cookie | 204. Exige la misma cabecera |
+| `GET /api/auth/sesion/` con `Authorization: Bearer <acceso>` | Devuelve el usuario y su rol | 200 con `{"usuario", "nombre", "rol"}` |
+
+| HTTP | `codigo` | Cuándo |
+|------|----------|--------|
+| 400 | `DATOS_INCOMPLETOS` | Falta el usuario o la contraseña |
+| 401 | `CREDENCIALES_INVALIDAS` | Usuario inexistente, contraseña incorrecta o cuenta sin acceso (el mismo mensaje en todos los casos) |
+| 401 | `SESION_EXPIRADA` | La cookie falta, venció, fue revocada o el usuario perdió el acceso |
+| 401 | `NO_AUTENTICADO` / `TOKEN_INVALIDO` | Ruta protegida sin token, o con un token vencido, alterado o de otro tipo |
+| 403 | `SIN_PERMISO` | El token es válido, pero el usuario no tiene el rol necesario |
+| 403 | `SOLICITUD_RECHAZADA` | Falta la cabecera `X-Requested-With: ConsultaVoto` (protección contra CSRF) |
+| 429 | `DEMASIADOS_INTENTOS` | Más de 5 intentos de inicio de sesión por minuto desde la misma IP (configurable con `INGRESO_LIMITE_POR_MINUTO`) |
+
+En Swagger UI, el botón **Authorize** acepta el token de acceso para probar `GET /api/auth/sesion/`.
+
 ## Estrategia de pruebas
 
 ```
@@ -159,6 +222,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 ├── backend/                   # API Django + DRF
 │   ├── config/                # Proyecto Django y settings por entorno
 │   ├── apps/consultas/        # App de dominio: modelos, admin, validadores, servicios, vistas, documentación OpenAPI
+│   ├── apps/cuentas/          # Sesión con JWT, roles, permisos, admin solo para superusuario y usuarios de demostración
 │   │   ├── migrations/        # Migraciones de la base de datos
 │   │   └── fixtures/          # Datos de demostración (datos_demo.json)
 │   ├── manage.py
@@ -181,6 +245,7 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 │   ├── api/                   # Pruebas de API y de su documentación
 │   ├── bdd/                   # features/ (Gherkin) + step_defs/api y step_defs/interfaz
 │   └── e2e/                   # Flujo, errores, accesibilidad, pantallas pequeñas y Swagger UI con Playwright
+├── docs/decisiones/           # Registro de decisiones de arquitectura (ADR): qué se decidió y por qué
 ├── reportes/                  # Generador del reporte de Allure (Allure 3, Node); cobertura/ con el HTML de cobertura
 ├── pytest.ini                 # Configuración y markers de las pruebas black-box
 └── .env.example               # Variables de entorno requeridas
@@ -197,17 +262,19 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 | Admin de Django para revisar los datos | ✅ |
 | API REST de consulta (`POST /api/consulta/`) | ✅ |
 | Documentación de la API con Swagger UI y OpenAPI 3.1 | ✅ |
-| Pruebas white-box del backend (pytest-django, 136 pruebas) | ✅ |
+| Pruebas white-box del backend (pytest-django, 228 pruebas) | ✅ |
 | Cobertura de código del backend (líneas y ramas): 100 %, con un mínimo del 95 % en el CI | ✅ [https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/](https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/) |
-| Pruebas black-box de la API y su documentación (pytest + requests, 110 pruebas) | ✅ |
-| Pruebas BDD (pytest-bdd, Gherkin en español): 14 casos contra la API y 14 contra la interfaz en cada navegador | ✅ |
+| Pruebas black-box de la API y su documentación (pytest + requests, 144 pruebas) | ✅ |
+| Pruebas BDD (pytest-bdd, Gherkin en español): 21 casos contra la API (14 de la consulta y 7 de inicio de sesión) y 14 contra la interfaz en cada navegador | ✅ |
 | Frontend React: base y layout común (fase 1 de 4) | ✅ |
 | Frontend React: pantalla de consulta con sus estados de error (fase 2 de 4) | ✅ |
 | Frontend React: pantalla de resultado para votante y jurado (fase 3 de 4) | ✅ |
 | Frontend React: accesibilidad, pantallas pequeñas y 404 (fase 4 de 4) | ✅ |
 | Pruebas E2E (Playwright, 114 casos, con auditoría de accesibilidad) en Chromium, Firefox y WebKit | ✅ |
 | Reporte de Allure con todas las suites (local) | ✅ |
-| Pipeline de CI en GitHub Actions: 644 pruebas en tres navegadores, cobertura y reporte de Allure | ✅ |
+| Pipeline de CI en GitHub Actions: 777 pruebas en tres navegadores, cobertura y reporte de Allure | ✅ |
+| Roles y acceso, fase 1 de 8: inicio de sesión con JWT, roles Administrador y Analista, admin de Django solo para el superusuario y usuarios de demostración | ✅ |
+| Registro de decisiones de arquitectura (ADR) en [`docs/decisiones/`](docs/decisiones/README.md): las 22 decisiones importantes desde el inicio del proyecto, con su porqué y las pruebas que las protegen | ✅ |
 | Rama `main` protegida: solo admite cambios por pull request con el CI en verde | ✅ |
 | Reporte de Allure publicado en GitHub Pages, con historial de las últimas 30 corridas | ✅ [https://crisprog2.github.io/ClaudeProyectoRegistraduria/](https://crisprog2.github.io/ClaudeProyectoRegistraduria/) |
 
@@ -216,8 +283,8 @@ Con el backend corriendo, la documentación interactiva está en http://127.0.0.
 GitHub Actions corre todas las suites en máquinas limpias en cada pull request hacia `main`, en cada push a `main` y a mano desde la pestaña Actions ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
 
 ```
-                ┌─ Backend: 136 pruebas y cobertura (mínimo 95 %), MySQL 8.0 en contenedor
-Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el backend levantado
+                ┌─ Backend: 228 pruebas y cobertura (mínimo 95 %), MySQL 8.0 en contenedor
+Push / PR ──────┼─ API y BDD por la API: 165 pruebas, con el backend levantado
                 ├─ Frontend: npm run build
                 └─ Interfaz × 3 navegadores en paralelo: 128 pruebas en cada uno
                                    │
@@ -237,7 +304,7 @@ Push / PR ──────┼─ API y BDD por la API: 124 pruebas, con el bac
 - **Reporte de cada corrida:** el reporte de Allure se genera aunque haya fallas, y se descarga como artefacto `reporte-allure` desde la página de la corrida, en la pestaña Actions. Para verlo, descomprímelo y, desde `reportes/`, ábrelo con `npx allure open <carpeta descomprimida> --host 127.0.0.1`. Abrir `index.html` con doble clic no funciona, porque el reporte necesita un servidor.
 - **Evidencia de fallos:** si un trabajo falla, se publican los logs de los servidores y las trazas de Playwright.
 - **Seguridad:** permisos de solo lectura; solo el trabajo `publicar` puede escribir en Pages. Las acciones de GitHub están fijadas por versión exacta. En las ramas de pull request, una corrida nueva cancela la anterior; en `main`, cada merge espera su turno para no cortar una publicación.
-- **Resultado:** cada corrida ejecuta 644 pruebas: 136 del backend, 124 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
+- **Resultado:** cada corrida ejecuta 777 pruebas: 228 del backend, 165 de API y 128 de interfaz en cada navegador. Como los trabajos corren en paralelo, tarda unos 5 minutos; Firefox es el más lento, con unos 4. [Primera corrida completa](https://github.com/crisprog2/ClaudeProyectoRegistraduria/actions/runs/43059436476), del 2026-11-11.
 - **`main` protegida:** no admite cambios directos. Todo cambio llega por pull request, y el merge solo es posible si pasan los seis trabajos de pruebas (backend, API, frontend y los tres navegadores) con la rama al día. Tampoco se puede borrar `main` ni reescribir su historial.
 - **Flujo de un cambio:** crear una rama desde `main` → subirla y abrir un pull request → el CI corre solo → si todo pasa, se hace el merge.
 - **Ajustes de la primera puesta en marcha:** las primeras corridas fallaron por el entorno de GitHub, no por el código. Las máquinas no podían descargar paquetes de Ubuntu (de ahí la imagen de Playwright), la caché de pip no funcionaba dentro del contenedor y Firefox no arrancaba porque `HOME` pertenecía a otro usuario. Los detalles están en `CLAUDE.md`.
@@ -294,14 +361,21 @@ python -c "from django.core.management.utils import get_random_secret_key; print
 
 Obligatorias: `DJANGO_SECRET_KEY`, `MYSQL_DATABASE`, `MYSQL_USER` y `MYSQL_PASSWORD`. Las demás tienen valores por defecto para desarrollo local (ver comentarios en [`.env.example`](.env.example)).
 
-### 4. Migraciones, datos de demostración y superusuario
+**Usuarios de demostración:** inventa una contraseña para cada uno en `DEMO_ADMIN_CONTRASENA` (`admin.demo`) y `DEMO_ANALISTA_CONTRASENA` (`analista.demo`). Deben tener al menos 8 caracteres, no ser comunes ni solo números, y no parecerse al nombre de usuario. Las usan el paso 4 para crear los usuarios y las pruebas black-box para iniciar sesión. No las compartas ni las subas al repositorio.
+
+### 4. Migraciones, datos de demostración, usuarios y superusuario
 
 ```powershell
 cd backend
 python manage.py migrate
 python manage.py loaddata datos_demo
-python manage.py createsuperuser
+python manage.py crear_usuarios_demo   # admin.demo y analista.demo, con las contraseñas del .env
+python manage.py createsuperuser       # solo para el admin de Django
 ```
+
+- `migrate` también crea los roles `Administrador` y `Analista` y las tablas de los tokens revocados.
+- `crear_usuarios_demo` se puede repetir: deja los usuarios activos, con su rol y la contraseña actual del `.env`. Si falta una variable o la contraseña no cumple las reglas, lo explica sin mostrar la contraseña.
+- Desde la raíz, `python scripts/pruebas.py base` hace los tres primeros pasos de una vez.
 
 ### 5. Levantar el backend
 
@@ -309,7 +383,17 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Admin en http://127.0.0.1:8000/admin/: muestra departamentos, ciudades, puestos, mesas, personas (con filtro "es jurado") y designaciones de jurado.
+Admin en http://127.0.0.1:8000/admin/, **solo para el superusuario**: muestra departamentos, ciudades, puestos, mesas, personas (con filtro "es jurado") y designaciones de jurado.
+
+Iniciar sesión desde PowerShell con un usuario de demostración (con el servidor corriendo):
+
+```powershell
+$cuerpo = @{ usuario = "analista.demo"; contrasena = $env:DEMO_ANALISTA_CONTRASENA } | ConvertTo-Json
+$sesion = Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/auth/ingresar/ -ContentType "application/json" -Body $cuerpo
+Invoke-RestMethod -Uri http://127.0.0.1:8000/api/auth/sesion/ -Headers @{ Authorization = "Bearer $($sesion.acceso)" }
+```
+
+`$env:DEMO_ANALISTA_CONTRASENA` solo existe si la definiste en la terminal; también puedes escribir la contraseña directamente.
 
 Swagger UI en http://127.0.0.1:8000/api/docs/: abre `POST /api/consulta/`, pulsa **Try it out**, elige un ejemplo y pulsa **Execute**. Cada ejecución cuenta para el límite de consultas. Sus archivos los sirve el backend, así que no funciona desde el puerto del frontend ni con `DJANGO_DEBUG=false`, porque en ese modo Django no sirve archivos estáticos.
 
@@ -362,6 +446,7 @@ python scripts/pruebas.py todo --cobertura             # además mide la cobertu
 
 ```powershell
 $env:CONSULTA_LIMITE_POR_MINUTO = "1000"
+$env:INGRESO_LIMITE_POR_MINUTO = "1000"   # la suite inicia sesión muchas veces
 cd backend
 python manage.py runserver
 ```
@@ -387,8 +472,8 @@ pytest tests -m smoke                # subconjunto crítico de todas las suites
 
 | Suite | Casos | Qué cubre |
 |-------|-------|-----------|
-| `tests/api` | 110 | Contrato de la API, validaciones, protocolo HTTP y coincidencia con la documentación OpenAPI |
-| `tests/bdd` | 28 por navegador | 14 escenarios de negocio, por la API y por la interfaz. Con varios navegadores, los de interfaz se repiten en cada uno (14 + 14 × navegadores) |
+| `tests/api` | 144 | Contrato de la API, validaciones, protocolo HTTP, sesión (cookie, rotación, cierre y errores) y coincidencia con la documentación OpenAPI |
+| `tests/bdd` | 35 con un navegador | 21 escenarios por la API (14 de la consulta y 7 de inicio de sesión) y 14 por la interfaz, que se repiten en cada navegador (21 + 14 × navegadores). El inicio de sesión se agrega a la interfaz en la fase 5 |
 | `tests/e2e` | 114 | Navegación, privacidad, formato, errores, fallas de red, accesibilidad, pantallas pequeñas y Swagger UI |
 
 Los escenarios están en [`tests/bdd/features/`](tests/bdd/features) y los datos de prueba en [`tests/data/`](tests/data). Las URL se toman de `API_BASE_URL` y `FRONTEND_BASE_URL` en el `.env` (por defecto `http://127.0.0.1:8000` y `http://localhost:5173`). Si falta algún servidor, la corrida se detiene con instrucciones.
@@ -473,6 +558,19 @@ npm run reporte
 - **En el CI:** el reporte se genera en cada corrida y se descarga como artefacto. El de `main` además se publica en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con su historial (ver "Integración continua").
 
 ### Pendiente
+
+**Roles y acceso**, por fases. Cada una llega a `main` con sus pruebas y su documentación:
+
+| Fase | Contenido | Estado |
+|---|---|---|
+| 1 | Inicio de sesión con JWT, roles y admin de Django solo para el superusuario | ✅ |
+| 2 | Registro de cada consulta, sin la cédula, para el reporte | ⏳ |
+| 3 | API de administración: datos, jurados y usuarios | ⏳ |
+| 4 | API del reporte: conteos por género, rango de edad y ciudad | ⏳ |
+| 5 | Frontend: pantalla de inicio de sesión y rutas protegidas | ⏳ |
+| 6a | Frontend: administración de datos y jurados | ⏳ |
+| 6b | Frontend: gestión de usuarios | ⏳ |
+| 7 | Frontend: reporte con gráficas de torta y de barras, y filtro por ciudad | ⏳ |
 
 - Opcional: un `Jenkinsfile` que reutilice `scripts/pruebas.py`
 

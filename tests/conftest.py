@@ -12,13 +12,15 @@ from support import config
 from support.api_client import ConsultaApiClient
 from support.pages.consulta_page import ConsultaPage
 from support.pages.resultado_page import ResultadoPage
+from support.sesion_client import SesionApiClient
 
 # Organiza el reporte de Allure; solo actúa cuando pytest corre con --alluredir.
 pytest_plugins = ['support.allure_reporte']
 
 COMO_LEVANTAR_BACKEND = (
-    '    $env:CONSULTA_LIMITE_POR_MINUTO = "1000"\n'
-    '    cd backend; python manage.py runserver'
+    '    $env:CONSULTA_LIMITE_POR_MINUTO = "1000"; $env:INGRESO_LIMITE_POR_MINUTO = "1000"\n'
+    '    cd backend; python manage.py runserver\n'
+    'O, con un solo comando: python scripts/pruebas.py api'
 )
 
 
@@ -35,6 +37,19 @@ def api():
             f'{COMO_LEVANTAR_BACKEND}',
             returncode=3,
         )
+    yield cliente
+    cliente.cerrar()
+
+
+@pytest.fixture
+def cliente_sesion(api):
+    """
+    Cliente nuevo de /api/auth/ para cada prueba, con sus propias cookies (API y BDD).
+
+    Depende de 'api' para exigir el servidor. No se comparte entre pruebas: la cookie
+    del token de refresco de una no debe llegar a otra.
+    """
+    cliente = SesionApiClient()
     yield cliente
     cliente.cerrar()
 

@@ -29,13 +29,17 @@ def _sin_propiedades_extra(nodo):
 
 
 class EspecificacionOpenApi:
-    """Lo que la especificación dice sobre POST /api/consulta/."""
+    """Lo que la especificación dice sobre una operación; por defecto, POST /api/consulta/."""
 
-    def __init__(self, contenido):
-        """Recibe la especificación ya convertida a diccionario."""
+    def __init__(self, contenido, ruta=RUTA_CONSULTA, metodo='post'):
+        """Recibe la especificación ya convertida a diccionario y la operación a revisar."""
         self.contenido = contenido
-        self.operacion = contenido['paths'][RUTA_CONSULTA]['post']
+        self.operacion = contenido['paths'][ruta][metodo.lower()]
         self._componentes = _sin_propiedades_extra(contenido['components'])
+
+    def de(self, ruta, metodo):
+        """La misma especificación, mirando otra operación (p. ej. las de /api/auth/)."""
+        return EspecificacionOpenApi(self.contenido, ruta, metodo)
 
     @property
     def codigos_http(self):
@@ -54,6 +58,10 @@ class EspecificacionOpenApi:
         """Cuerpos de ejemplo documentados para un código HTTP."""
         contenido = self.operacion['responses'][str(http)]['content'][TIPO_JSON]
         return [ejemplo['value'] for ejemplo in contenido['examples'].values()]
+
+    def cabeceras_respuesta(self, http):
+        """Nombres de las cabeceras documentadas para un código HTTP."""
+        return set(self.operacion['responses'][str(http)].get('headers', {}))
 
     def errores_de_validacion(self, http, cuerpo):
         """Lista de diferencias entre un cuerpo de respuesta y su esquema documentado; vacía si coincide."""

@@ -1,0 +1,16 @@
+[
+  {
+    "id": "administrador",
+    "usuario": "admin.demo",
+    "variable_contrasena": "DEMO_ADMIN_CONTRASENA",
+    "esperado": {"usuario": "admin.demo", "nombre": "Administrador Demo", "rol": "Administrador"},
+    "smoke": true
+  },
+  {
+    "id": "analista",
+    "usuario": "analista.demo",
+    "variable_contrasena": "DEMO_ANALISTA_CONTRASENA",
+    "esperado": {"usuario": "analista.demo", "nombre": "Analista Demo", "rol": "Analista"},
+    "smoke": true
+  }
+]

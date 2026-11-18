@@ -5,6 +5,7 @@ Toda la configuración sensible o dependiente del entorno se lee de variables
 de entorno, cargadas desde el archivo .env de la raíz del repositorio.
 """
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
@@ -50,7 +51,8 @@ DEBUG = env_bool('DJANGO_DEBUG')
 ALLOWED_HOSTS = env_lista('DJANGO_ALLOWED_HOSTS')
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    # Admin de Django que solo admite al superusuario (ver apps/cuentas/sitio_admin.py y docs/decisiones/0003).
+    'apps.cuentas.sitio_admin.AdminSoloSuperusuarioConfig',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -60,7 +62,10 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'drf_spectacular_sidecar',
+    # Tablas de los tokens de refresco emitidos y revocados (rotación y cierre de sesión).
+    'rest_framework_simplejwt.token_blacklist',
     'apps.consultas',
+    'apps.cuentas',
 ]
 
 MIDDLEWARE = [
@@ -133,21 +138,55 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# La API de consulta es pública y de solo lectura: no requiere autenticación.
+# La consulta electoral es pública (su vista no usa autenticación). Los endpoints de
+# administración y reportes usan JWT y los permisos de apps/cuentas/permissions.py.
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': ['rest_framework.renderers.JSONRenderer'],
+    'DEFAULT_AUTHENTICATION_CLASSES': ['rest_framework_simplejwt.authentication.JWTAuthentication'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.AllowAny'],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Todas las respuestas de error con el formato {codigo, mensaje}.
     'EXCEPTION_HANDLER': 'apps.consultas.exceptions.manejador_de_errores',
     # Límite de consultas por IP para evitar recorridos masivos de cédulas.
     # Por defecto 30/min; la suite black-box levanta el servidor con un valor alto.
-    'DEFAULT_THROTTLE_RATES': {'consulta': f"{env_entero_positivo('CONSULTA_LIMITE_POR_MINUTO', 30)}/min"},
+    # 'ingreso': intentos de inicio de sesión por IP, contra ataques de fuerza bruta (5/min por defecto).
+    'DEFAULT_THROTTLE_RATES': {
+        'consulta': f"{env_entero_positivo('CONSULTA_LIMITE_POR_MINUTO', 30)}/min",
+        'ingreso': f"{env_entero_positivo('INGRESO_LIMITE_POR_MINUTO', 5)}/min",
+    },
     # 0 = identificar al cliente por REMOTE_ADDR. Con el valor por defecto (None)
     # DRF usa X-Forwarded-For, que el cliente puede falsificar para evadir el límite.
     # Si se despliega detrás de un proxy, poner aquí el número de proxies de confianza.
     'NUM_PROXIES': 0,
 }
+
+# Tokens JWT (djangorestframework-simplejwt). Decisión y motivos: docs/decisiones/0002.
+# - El de acceso viaja en la cabecera Authorization y vive en la memoria de la página.
+# - El de refresco viaja solo en una cookie httpOnly (JWT_COOKIE) y nunca en el JSON.
+# - La rotación la hace apps/cuentas/services.py: revoca el anterior y conserva su
+#   vencimiento, así que la sesión dura como máximo 8 horas desde el inicio de sesión.
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(hours=8),
+    'ALGORITHM': 'HS256',
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    # Un usuario desactivado pierde el acceso de inmediato, aunque su token siga vigente.
+    'CHECK_USER_IS_ACTIVE': True,
+    'UPDATE_LAST_LOGIN': False,
+}
+
+# Cookie del token de refresco. Secure se activa con JWT_COOKIE_SECURE en cualquier
+# despliegue con HTTPS; en local y en el CI se trabaja con http://, donde no viajaría.
+JWT_COOKIE = {
+    'NOMBRE': 'consultavoto_refresco',
+    'RUTA': '/api/auth/',
+    'SAMESITE': 'Strict',
+    'SECURE': env_bool('JWT_COOKIE_SECURE'),
+}
+
+# Cabecera que deben enviar refrescar y salir. Un sitio ajeno no puede agregarla sin
+# pasar por CORS (protección contra CSRF junto con SameSite=Strict; ver docs/decisiones/0002).
+CABECERA_APP = ('X-Requested-With', 'ConsultaVoto')
 
 # Documentación OpenAPI en /api/schema/ y Swagger UI en /api/docs/.
 SPECTACULAR_SETTINGS = {

@@ -51,6 +51,12 @@ env:
   MYSQL_ROOT_PASSWORD: root-solo-para-ci
   MYSQL_HOST: 127.0.0.1
   MYSQL_PORT: '3306'
+  # Contraseñas de los usuarios de demostración (admin.demo y analista.demo). Como las de
+  # MySQL, solo valen dentro de la base temporal de cada trabajo: no son secretos.
+  DEMO_ADMIN_CONTRASENA: Clave-Admin-Solo-Para-CI-2026
+  DEMO_ANALISTA_CONTRASENA: Clave-Analista-Solo-Para-CI-2026
+  # La cookie del token de refresco no lleva Secure: el CI usa http://, como el entorno local.
+  JWT_COOKIE_SECURE: 'false'
 
 jobs:
   backend:
