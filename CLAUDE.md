@@ -192,7 +192,7 @@ Funcionalidad nueva, aprobada por el usuario el 2026-11-18. El usuario ya había
 
 | Fase | Contenido | Estado |
 |---|---|---|
-| 1 | Autenticación JWT y roles (backend) | 🧪 rama `feature/autenticacion-roles` |
+| 1 | Autenticación JWT y roles (backend) | ✅ en `main` desde el PR #9 (2026-11-18) |
 | 2 | Modelo `RegistroConsulta`: una fila por consulta, **sin cédula** (fecha y hora, resultado, género, ciudad y edad del día). **Cambia `models.py`: necesita la aprobación del usuario** | ⏳ |
 | 3 | API de administración: CRUD de las 6 entidades, asignar o quitar jurado, gestión de usuarios con las reglas del ADR 0001 | ⏳ |
 | 4 | API del reporte: total, no encontradas y conteos por género, rango de edad y ciudad, con filtro por ciudad; para el Analista y el Administrador | ⏳ |
@@ -290,6 +290,10 @@ El 405 de la consulta sigue diciendo "Usa POST para consultar.".
     2. La primera mutación del "token en el JSON" no era un defecto real, porque el serializador descarta los campos que no declara.
 - **Verificado en local (2026-11-18):** `python scripts/pruebas.py todo --allure --cobertura` pasó 228 + 165 + 128 pruebas (Chromium), con 100 % de cobertura, y devolvió 0. Se usaron contraseñas de demostración **temporales**, solo en el proceso de la corrida. Después el usuario agregó las suyas al `.env`, se corrió `base` y las 165 pruebas de API y BDD pasaron con ellas.
 - **Base local:** `base` aplicó las migraciones `cuentas.0001_grupos` y `token_blacklist` (0001 a 0013) y creó `admin.demo` y `analista.demo`.
+- **Verificado en el CI:**
+  - PR #9 (corrida 44402017801): pasaron todos los trabajos;
+  - sobre `main` (corrida 44402876424, commit `2f6a519`): pasaron todos, incluida la publicación;
+  - el historial publicado registra la corrida con **777 pruebas** (577 → 605 → 605 → 644 → 777), y la cobertura publicada da **100 %** (627 líneas y 48 ramas, con `apps/cuentas`).
 
 ## Reporte de Allure
 
@@ -443,7 +447,12 @@ Decisiones:
 - ✅ Reporte de Allure en GitHub Pages con historial, en `main` desde el PR #5 (2026-11-12): publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/, con el primer despliegue verificado.
 - ✅ Escenarios BDD de interfaz separados por navegador, en `main` desde el PR #6 (2026-11-12). Ver "Caso resuelto" en la sección de pruebas BDD. Verificado en el reporte publicado: 605 pruebas (antes 577) y ninguna repetida. El historial de Pages registra las dos corridas (577 → 605).
 - ✅ Cobertura de código del backend, en `main` desde el PR #8 (2026-11-17): 100 % de líneas y ramas, con un mínimo del 95 % en el CI. Confirmado en la corrida sobre `main`: 644 pruebas y el reporte publicado en https://crisprog2.github.io/ClaudeProyectoRegistraduria/cobertura/ (342 líneas y 24 ramas, 100 %).
-- 🧪 Roles y acceso, fase 1 de 8 (rama `feature/autenticacion-roles`): JWT, roles, `/admin/` solo para el superusuario, usuarios de demostración y 22 ADR (3 de la fase y 19 retroactivos, desde el inicio del proyecto). Verificado en local: 228 + 165 + 128 pruebas, 100 % de cobertura y 17 mutaciones detectadas. Falta la corrida en GitHub, que serán 777 pruebas. El usuario ya agregó `DEMO_ADMIN_CONTRASENA` y `DEMO_ANALISTA_CONTRASENA` a su `.env`; `base` actualizó los usuarios, y las 165 pruebas de API y BDD pasaron con sus contraseñas.
+- ✅ Roles y acceso, fase 1 de 8, en `main` desde el PR #9 (2026-11-18):
+  - JWT, roles, `/admin/` solo para el superusuario y usuarios de demostración;
+  - 22 ADR (3 de la fase y 19 retroactivos, desde el inicio del proyecto);
+  - 17 mutaciones detectadas;
+  - confirmado en la corrida sobre `main`: 777 pruebas y 100 % de cobertura (ver "Fase 1" en "Autenticación y roles");
+  - el usuario tiene `DEMO_ADMIN_CONTRASENA` y `DEMO_ANALISTA_CONTRASENA` en su `.env`.
 - ⏳ Siguiente: fase 2 (registro de consultas, con un cambio en `models.py` que el usuario debe aprobar). Ver el plan en "Autenticación y roles". Jenkins es opcional y reutilizaría `scripts/pruebas.py`.
 - ⚠️ El MCP de Figma (plan Starter) agotó su límite de llamadas el 2026-11-03. El frame del jurado (`6:2609`) se implementó desde una captura del usuario: textos y estructura son exactos, y algunas medidas y colores son aproximados (`--color-borde-azul`, tamaño de `018 · Jurado`). Conviene compararlo con el Figma cuando haya cupo.
 
